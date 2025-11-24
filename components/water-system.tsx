@@ -23,7 +23,7 @@ export function WaterSystem({ flowRate, slope }: WaterSystemProps) {
   // Initialize particles lazily
   if (!particlesRef.current) {
     particlesRef.current = Array.from({ length: PARTICLE_COUNT }, () => ({
-      position: new THREE.Vector3((Math.random() - 0.5) * 2, 1.5, -3.5 + Math.random() * 0.5),
+      position: new THREE.Vector3((Math.random() - 0.5) * 2, 1.5, -7.5 + Math.random() * 0.5),
       velocity: new THREE.Vector3(0, 0, 0),
     }))
   }
@@ -38,8 +38,8 @@ export function WaterSystem({ flowRate, slope }: WaterSystemProps) {
       const particle = particles[i]
 
       // Reset if off screen
-      if (particle.position.z > 4 || particle.position.y < -0.5) {
-        particle.position.set((Math.random() - 0.5) * 2, 1.5, -3.8)
+      if (particle.position.z > 8 || particle.position.y < -0.5) {
+        particle.position.set((Math.random() - 0.5) * 2, 1.5, -7.8)
         particle.velocity.set(0, 0, 0)
       }
 

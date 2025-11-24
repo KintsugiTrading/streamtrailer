@@ -7,7 +7,7 @@ export function TrailerContainer() {
     <group position={[0, 0, 0]}>
       {/* Base of trailer */}
       <mesh position={[0, -0.5, 0]} receiveShadow>
-        <boxGeometry args={[10, 0.2, 8]} />
+        <boxGeometry args={[10, 0.2, 16]} />
         <meshStandardMaterial color="#2c3e50" metalness={0.6} roughness={0.4} />
       </mesh>
 
@@ -15,24 +15,24 @@ export function TrailerContainer() {
       <RigidBody type="fixed" colliders="cuboid">
         {/* Left wall */}
         <mesh position={[-5, 0.5, 0]} castShadow>
-          <boxGeometry args={[0.2, 1.2, 8]} />
+          <boxGeometry args={[0.2, 1.2, 16]} />
           <meshStandardMaterial color="#34495e" metalness={0.5} roughness={0.5} />
         </mesh>
 
         {/* Right wall */}
         <mesh position={[5, 0.5, 0]} castShadow>
-          <boxGeometry args={[0.2, 1.2, 8]} />
+          <boxGeometry args={[0.2, 1.2, 16]} />
           <meshStandardMaterial color="#34495e" metalness={0.5} roughness={0.5} />
         </mesh>
 
         {/* Back wall (high side) */}
-        <mesh position={[0, 0.5, -4]} castShadow>
+        <mesh position={[0, 0.5, -8]} castShadow>
           <boxGeometry args={[10, 1.2, 0.2]} />
           <meshStandardMaterial color="#34495e" metalness={0.5} roughness={0.5} />
         </mesh>
 
         {/* Front wall (low side for water exit) */}
-        <mesh position={[0, 0.2, 4]} castShadow>
+        <mesh position={[0, 0.2, 8]} castShadow>
           <boxGeometry args={[10, 0.6, 0.2]} />
           <meshStandardMaterial color="#34495e" metalness={0.5} roughness={0.5} />
         </mesh>
@@ -40,10 +40,10 @@ export function TrailerContainer() {
 
       {/* Corner supports / Jacks */}
       {[
-        [-4.8, -1.2, -3.8],
-        [4.8, -1.2, -3.8],
-        [-4.8, -1.2, 3.8],
-        [4.8, -1.2, 3.8],
+        [-4.8, -1.2, -7.8],
+        [4.8, -1.2, -7.8],
+        [-4.8, -1.2, 7.8],
+        [4.8, -1.2, 7.8],
       ].map((pos, i) => (
         <group key={i} position={pos as [number, number, number]}>
           <mesh castShadow>
@@ -85,7 +85,7 @@ export function TrailerContainer() {
         ))}
       </group>
 
-      <group position={[0, -0.5, 4]} rotation={[0, 0, 0]}>
+      <group position={[0, -0.5, 8]} rotation={[0, 0, 0]}>
         {/* A-Frame */}
         <mesh position={[-1.5, 0, 2]} rotation={[0, -0.35, 0]} castShadow>
           <boxGeometry args={[0.15, 0.15, 4.5]} />
@@ -122,13 +122,13 @@ export function TrailerContainer() {
       </group>
 
       {/* Water inlet pipe (top back) */}
-      <mesh position={[0, 1, -4.2]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+      <mesh position={[0, 1, -8.2]} rotation={[Math.PI / 2, 0, 0]} castShadow>
         <cylinderGeometry args={[0.15, 0.15, 0.6, 12]} />
         <meshStandardMaterial color="#546e7a" metalness={0.7} roughness={0.3} />
       </mesh>
 
       {/* Outlet drain (front bottom) */}
-      <mesh position={[0, -0.3, 4.2]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[0, -0.3, 8.2]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.2, 0.2, 0.5, 12]} />
         <meshStandardMaterial color="#37474f" metalness={0.6} roughness={0.4} />
       </mesh>

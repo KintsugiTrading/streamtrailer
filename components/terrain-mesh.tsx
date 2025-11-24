@@ -12,9 +12,9 @@ interface TerrainMeshProps {
 }
 
 const WIDTH = 64
-const HEIGHT = 64
+const HEIGHT = 128
 const SIZE_X = 9
-const SIZE_Z = 7
+const SIZE_Z = 15
 
 export function TerrainMesh({ streamState, setStreamState }: TerrainMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null)

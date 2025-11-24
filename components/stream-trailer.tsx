@@ -37,7 +37,7 @@ export function StreamTrailer() {
 
   return (
     <div className="relative w-full h-full">
-      <Canvas camera={{ position: [0, 8, 12], fov: 50 }} shadows gl={{ antialias: true, alpha: false }}>
+      <Canvas camera={{ position: [0, 8, 20], fov: 50 }} shadows gl={{ antialias: true, alpha: false }}>
         <color attach="background" args={["#1e293b"]} />
 
         {/* Lighting setup */}
