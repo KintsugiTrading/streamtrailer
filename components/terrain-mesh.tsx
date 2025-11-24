@@ -9,14 +9,15 @@ import { createNoise2D } from "simplex-noise"
 interface TerrainMeshProps {
   streamState: StreamState
   setStreamState?: (state: StreamState | ((prev: StreamState) => StreamState)) => void
+  onHeightMapChange?: (heights: Float32Array) => void
 }
 
-const WIDTH = 64
-const HEIGHT = 128
-const SIZE_X = 9
-const SIZE_Z = 15
+export const WIDTH = 64
+export const HEIGHT = 128
+export const SIZE_X = 9
+export const SIZE_Z = 15
 
-export function TerrainMesh({ streamState, setStreamState }: TerrainMeshProps) {
+export function TerrainMesh({ streamState, setStreamState, onHeightMapChange }: TerrainMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null)
 
   const { geometry, heights } = useMemo(() => {
@@ -54,6 +55,9 @@ export function TerrainMesh({ streamState, setStreamState }: TerrainMeshProps) {
     geo.setAttribute("color", new THREE.BufferAttribute(colors, 3))
     geo.computeVertexNormals()
 
+    if (onHeightMapChange) {
+      onHeightMapChange(heightData)
+    }
     return { geometry: geo, heights: heightData }
   }, [])
 
@@ -100,6 +104,9 @@ export function TerrainMesh({ streamState, setStreamState }: TerrainMeshProps) {
       positions.needsUpdate = true
       colorAttr.needsUpdate = true
       geometry.computeVertexNormals()
+      if (onHeightMapChange) {
+        onHeightMapChange(heights)
+      }
     }
   })
 
@@ -109,7 +116,7 @@ export function TerrainMesh({ streamState, setStreamState }: TerrainMeshProps) {
 
     const point = e.point
 
-    if (streamState.selectedTool === "plant" && setStreamState) {
+    if ((streamState.selectedTool === "tree" || streamState.selectedTool === "grass" || streamState.selectedTool === "bridge") && setStreamState) {
       setStreamState((prev) => ({
         ...prev,
         plants: [
@@ -117,7 +124,7 @@ export function TerrainMesh({ streamState, setStreamState }: TerrainMeshProps) {
           {
             id: Math.random().toString(36).substring(2, 9),
             position: [point.x, point.y, point.z] as [number, number, number],
-            type: Math.random() > 0.5 ? "tree" : "shrub",
+            type: streamState.selectedTool as "tree" | "grass" | "bridge",
             scale: 0.8 + Math.random() * 0.4,
           },
         ],
@@ -166,6 +173,9 @@ export function TerrainMesh({ streamState, setStreamState }: TerrainMeshProps) {
 
     positions.needsUpdate = true
     geometry.computeVertexNormals()
+    if (onHeightMapChange) {
+      onHeightMapChange(heights)
+    }
   }
 
   return (

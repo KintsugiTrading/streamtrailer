@@ -7,7 +7,7 @@ import { TrailerScene } from "./trailer-scene"
 import { StreamControls } from "./stream-controls"
 import { useState } from "react"
 
-export type Tool = "dig" | "fill" | "plant" | "remove" | "none"
+export type Tool = "dig" | "fill" | "tree" | "grass" | "bridge" | "remove" | "none"
 
 export interface StreamState {
   waterFlow: boolean
@@ -21,7 +21,7 @@ export interface StreamState {
 export interface PlantInstance {
   id: string
   position: [number, number, number]
-  type: "tree" | "shrub" | "grass"
+  type: "tree" | "shrub" | "grass" | "bridge"
   scale: number
 }
 

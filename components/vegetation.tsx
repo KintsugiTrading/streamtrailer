@@ -13,10 +13,14 @@ const MAX_INSTANCES = 500
 export function Vegetation({ plants }: VegetationProps) {
   const trees = useMemo(() => plants.filter((p) => p.type === "tree"), [plants])
   const shrubs = useMemo(() => plants.filter((p) => p.type === "shrub"), [plants])
+  const grass = useMemo(() => plants.filter((p) => p.type === "grass"), [plants])
+  const bridges = useMemo(() => plants.filter((p) => p.type === "bridge"), [plants])
 
   const trunkRef = useRef<THREE.InstancedMesh>(null)
   const foliageRef = useRef<THREE.InstancedMesh>(null)
   const shrubRef = useRef<THREE.InstancedMesh>(null)
+  const grassRef = useRef<THREE.InstancedMesh>(null)
+  const bridgeRef = useRef<THREE.InstancedMesh>(null)
 
   const dummy = useMemo(() => new THREE.Object3D(), [])
 
@@ -79,6 +83,54 @@ export function Vegetation({ plants }: VegetationProps) {
     shrub.instanceMatrix.needsUpdate = true
   }, [shrubs, dummy])
 
+  useEffect(() => {
+    const grassMesh = grassRef.current
+
+    if (!grassMesh?.instanceMatrix) return
+
+    grass.forEach((g, i) => {
+      if (i >= MAX_INSTANCES) return
+
+      dummy.position.set(g.position[0], g.position[1] + 0.05, g.position[2])
+      dummy.scale.set(g.scale * 0.3, g.scale * 0.1, g.scale * 0.3)
+      dummy.updateMatrix()
+      grassMesh.setMatrixAt(i, dummy.matrix)
+    })
+
+    // Hide unused
+    for (let i = grass.length; i < MAX_INSTANCES; i++) {
+      dummy.scale.set(0, 0, 0)
+      dummy.updateMatrix()
+      grassMesh.setMatrixAt(i, dummy.matrix)
+    }
+
+    grassMesh.instanceMatrix.needsUpdate = true
+  }, [grass, dummy])
+
+  useEffect(() => {
+    const bridgeMesh = bridgeRef.current
+
+    if (!bridgeMesh?.instanceMatrix) return
+
+    bridges.forEach((b, i) => {
+      if (i >= MAX_INSTANCES) return
+
+      dummy.position.set(b.position[0], b.position[1] + 0.1, b.position[2])
+      dummy.scale.set(b.scale * 2, b.scale * 0.1, b.scale * 0.5)
+      dummy.updateMatrix()
+      bridgeMesh.setMatrixAt(i, dummy.matrix)
+    })
+
+    // Hide unused
+    for (let i = bridges.length; i < MAX_INSTANCES; i++) {
+      dummy.scale.set(0, 0, 0)
+      dummy.updateMatrix()
+      bridgeMesh.setMatrixAt(i, dummy.matrix)
+    }
+
+    bridgeMesh.instanceMatrix.needsUpdate = true
+  }, [bridges, dummy])
+
   return (
     <group>
       {/* Tree Trunks */}
@@ -97,6 +149,18 @@ export function Vegetation({ plants }: VegetationProps) {
       <instancedMesh ref={shrubRef} args={[undefined, undefined, MAX_INSTANCES]} frustumCulled={false}>
         <sphereGeometry args={[0.5, 6, 6]} />
         <meshStandardMaterial color="#4a7c42" roughness={0.9} />
+      </instancedMesh>
+
+      {/* Grass */}
+      <instancedMesh ref={grassRef} args={[undefined, undefined, MAX_INSTANCES]} frustumCulled={false}>
+        <cylinderGeometry args={[0.3, 0.3, 0.1, 8]} />
+        <meshStandardMaterial color="#6b8e23" roughness={0.95} />
+      </instancedMesh>
+
+      {/* Bridges */}
+      <instancedMesh ref={bridgeRef} args={[undefined, undefined, MAX_INSTANCES]} frustumCulled={false}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#8B4513" roughness={0.8} />
       </instancedMesh>
     </group>
   )
