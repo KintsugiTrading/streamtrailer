@@ -67,7 +67,7 @@ export function StreamTrailer() {
 
         {/* Physics-enabled scene */}
         <Physics gravity={[0, -9.81, 0]}>
-          <TrailerScene streamState={streamState} />
+          <TrailerScene streamState={streamState} setStreamState={setStreamState} />
         </Physics>
 
         {/* Optional grid for reference */}

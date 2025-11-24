@@ -28,7 +28,8 @@ export function WaterSystem({ flowRate, slope, heightMap, plants }: WaterSystemP
   // Initialize particles lazily
   if (!particlesRef.current) {
     particlesRef.current = Array.from({ length: PARTICLE_COUNT }, () => ({
-      position: new THREE.Vector3((Math.random() - 0.5) * 0.5, 2, -7.5 + Math.random() * 0.5),
+      // Initialize randomly along the stream path to simulate continuous flow
+      position: new THREE.Vector3((Math.random() - 0.5) * 4, 1.5, -7.5 + Math.random() * 15),
       velocity: new THREE.Vector3(0, 0, 0),
     }))
   }

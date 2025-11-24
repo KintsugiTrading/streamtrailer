@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useMemo } from "react"
+import { useRef, useMemo, useEffect } from "react"
 import { useFrame } from "@react-three/fiber"
 import * as THREE from "three"
 import type { StreamState } from "./stream-trailer"
@@ -55,11 +55,15 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange }: 
     geo.setAttribute("color", new THREE.BufferAttribute(colors, 3))
     geo.computeVertexNormals()
 
-    if (onHeightMapChange) {
-      onHeightMapChange(heightData)
-    }
     return { geometry: geo, heights: heightData }
   }, [])
+
+  // Initial height map update
+  useEffect(() => {
+    if (onHeightMapChange && heights) {
+      onHeightMapChange(heights)
+    }
+  }, [onHeightMapChange, heights])
 
   // Erosion simulation
   useFrame((_, delta) => {
