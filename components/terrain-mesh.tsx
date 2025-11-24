@@ -121,18 +121,50 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange }: 
     const point = e.point
 
     if ((streamState.selectedTool === "tree" || streamState.selectedTool === "grass" || streamState.selectedTool === "bridge") && setStreamState) {
-      setStreamState((prev) => ({
-        ...prev,
-        plants: [
-          ...prev.plants,
-          {
+      // For grass, create multiple instances in a radius for larger paint effect
+      if (streamState.selectedTool === "grass") {
+        const grassCount = 8 + Math.floor(Math.random() * 5) // 8-12 grass patches
+        const grassRadius = 1.5 // Larger radius for grass painting
+        const newGrass: Array<{
+          id: string
+          position: [number, number, number]
+          type: "grass"
+          scale: number
+        }> = []
+
+        for (let i = 0; i < grassCount; i++) {
+          const angle = Math.random() * Math.PI * 2
+          const radius = Math.random() * grassRadius
+          const offsetX = Math.cos(angle) * radius
+          const offsetZ = Math.sin(angle) * radius
+
+          newGrass.push({
             id: Math.random().toString(36).substring(2, 9),
-            position: [point.x, point.y, point.z] as [number, number, number],
-            type: streamState.selectedTool as "tree" | "grass" | "bridge",
+            position: [point.x + offsetX, point.y, point.z + offsetZ] as [number, number, number],
+            type: "grass" as const,
             scale: 0.8 + Math.random() * 0.4,
-          },
-        ],
-      }))
+          })
+        }
+
+        setStreamState((prev) => ({
+          ...prev,
+          plants: [...prev.plants, ...newGrass],
+        }))
+      } else {
+        // Single instance for trees and bridges
+        setStreamState((prev) => ({
+          ...prev,
+          plants: [
+            ...prev.plants,
+            {
+              id: Math.random().toString(36).substring(2, 9),
+              position: [point.x, point.y, point.z] as [number, number, number],
+              type: streamState.selectedTool as "tree" | "grass" | "bridge",
+              scale: 0.8 + Math.random() * 0.4,
+            },
+          ],
+        }))
+      }
       return
     }
 
