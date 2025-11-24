@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
-import { Play, Pause, Mountain, Waves, Shovel, Trees as Tree, Trash2, Grid3x3, RotateCcw, Menu, EyeOff, Sprout, Bridge } from "lucide-react"
+import { Play, Pause, Mountain, Waves, Shovel, Trees as Tree, Trash2, Grid3x3, RotateCcw, Menu, EyeOff, Sprout, Construction } from "lucide-react"
 import type { StreamState, Tool } from "./stream-trailer"
 
 interface StreamControlsProps {
@@ -22,7 +22,7 @@ export function StreamControls({ streamState, setStreamState }: StreamControlsPr
     { id: "fill", icon: Mountain, label: "Add Terrain" },
     { id: "tree", icon: Tree, label: "Trees" },
     { id: "grass", icon: Sprout, label: "Grass" },
-    { id: "bridge", icon: Bridge, label: "Bridge" },
+    { id: "bridge", icon: Construction, label: "Bridge" },
     { id: "remove", icon: Trash2, label: "Remove Plants" },
   ]
 
