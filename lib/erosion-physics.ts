@@ -82,7 +82,10 @@ export class ErosionSystem {
     // 7. Terrain Smoothing (creates smooth, realistic channels)
     this.smoothTerrain(terrainHeight, dt)
 
-    // 8. Open Boundary (Drain at bottom)
+    // 8. Extra Smoothing for Deposition Zones (eliminates spiky sediment piles)
+    this.smoothDepositionZones(terrainHeight)
+
+    // 9. Open Boundary (Drain at bottom)
     this.applyOpenBoundary()
 
     return terrainHeight
@@ -108,18 +111,15 @@ export class ErosionSystem {
     // or just the one where water accumulates.
     // Let's drain the last 2 rows and first 2 rows.
 
-    // Expanded drainage zone to prevent sediment piling at boundary
-    const drainageRows = 10
-
     for (let x = 0; x < this.width; x++) {
-      // Bottom rows - expanded drainage zone
-      for (let dr = 0; dr < drainageRows; dr++) {
-        const idx = (this.height - 1 - dr) * this.width + x
-        if (idx >= 0 && idx < this.waterHeight.length) {
-          this.waterHeight[idx] = 0
-          this.sediment[idx] = 0
-        }
-      }
+      // Bottom rows (if that's where it flows)
+      const idxBottom1 = (this.height - 1) * this.width + x
+      const idxBottom2 = (this.height - 2) * this.width + x
+
+      this.waterHeight[idxBottom1] = 0
+      this.waterHeight[idxBottom2] = 0
+      this.sediment[idxBottom1] = 0
+      this.sediment[idxBottom2] = 0
 
       // Top rows (just in case)
       const idxTop1 = x
@@ -303,9 +303,7 @@ export class ErosionSystem {
       const x = i % this.width
       const y = Math.floor(i / this.width)
 
-      // Skip boundaries and drainage zone
-      const drainageZone = 10
-      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1 || y >= this.height - drainageZone) continue
+      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) continue
 
       // Calculate tilt/slope
       const idxL = i - 1
@@ -459,6 +457,55 @@ export class ErosionSystem {
     // Copy smoothed heights back
     for (let i = 0; i < terrainHeight.length; i++) {
       terrainHeight[i] = newHeight[i]
+    }
+  }
+
+  private smoothDepositionZones(terrainHeight: Float32Array) {
+    // Extra smoothing pass for the bottom 20% of the map where sediment piles up
+    // This uses a stronger 8-neighbor average to eliminate spiky deposits
+    const zoneStartY = Math.floor(this.height * 0.75) // Bottom 25% of map
+    const newHeight = new Float32Array(terrainHeight)
+
+    for (let y = zoneStartY; y < this.height - 1; y++) {
+      for (let x = 1; x < this.width - 1; x++) {
+        const i = y * this.width + x
+
+        // 8-neighbor average for stronger smoothing
+        const idxL = i - 1
+        const idxR = i + 1
+        const idxT = i + this.width
+        const idxB = i - this.width
+        const idxTL = idxT - 1
+        const idxTR = idxT + 1
+        const idxBL = idxB - 1
+        const idxBR = idxB + 1
+
+        const average = (
+          terrainHeight[idxL] +
+          terrainHeight[idxR] +
+          terrainHeight[idxT] +
+          terrainHeight[idxB] +
+          terrainHeight[idxTL] +
+          terrainHeight[idxTR] +
+          terrainHeight[idxBL] +
+          terrainHeight[idxBR]
+        ) / 8
+
+        // Strong smoothing towards average (70% blend)
+        newHeight[i] = terrainHeight[i] * 0.3 + average * 0.7
+
+        // Clamp to valid range
+        if (newHeight[i] < 0.01) newHeight[i] = 0.01
+        if (newHeight[i] > 2.5) newHeight[i] = 2.5
+      }
+    }
+
+    // Copy smoothed heights back
+    for (let y = zoneStartY; y < this.height - 1; y++) {
+      for (let x = 1; x < this.width - 1; x++) {
+        const i = y * this.width + x
+        terrainHeight[i] = newHeight[i]
+      }
     }
   }
 }
