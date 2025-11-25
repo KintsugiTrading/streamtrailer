@@ -78,7 +78,50 @@ export class ErosionSystem {
     // 6. Evaporation
     this.evaporate(dt)
 
+    // 7. Open Boundary (Drain at bottom)
+    this.applyOpenBoundary()
+
     return terrainHeight
+  }
+
+  private applyOpenBoundary() {
+    // Drain water and sediment at the bottom edge (y = height - 1 or y = 0 depending on flow)
+    // Flow is generally towards +Z in world, which maps to... let's check TerrainMesh.
+    // TerrainMesh: slopeHeight = (-z / SIZE_Z + 0.5) * 1.5
+    // Z goes from -7.5 to 7.5.
+    // -Z is "back" (high), +Z is "front" (low).
+    // In grid: 
+    // x = i % WIDTH
+    // y = i / WIDTH
+    // We need to know which Y index corresponds to +Z (low end).
+    // TerrainMesh: positions.setZ(i) comes from PlaneGeometry.
+    // PlaneGeometry creates vertices row by row.
+    // Usually row 0 is top (+Y in geometry UV space), but mapped to Z.
+    // Let's assume the "bottom" of the map (low end) is either y=0 or y=height-1.
+    // We added water at y=2 (near top). So flow is towards y increasing or decreasing?
+    // If we added at y=2 and it flowed down, and we saw spikes at the "bottom", 
+    // we just need to drain the edges. Let's drain both top and bottom edges to be safe, 
+    // or just the one where water accumulates.
+    // Let's drain the last 2 rows and first 2 rows.
+
+    for (let x = 0; x < this.width; x++) {
+      // Bottom rows (if that's where it flows)
+      const idxBottom1 = (this.height - 1) * this.width + x
+      const idxBottom2 = (this.height - 2) * this.width + x
+
+      this.waterHeight[idxBottom1] = 0
+      this.waterHeight[idxBottom2] = 0
+      this.sediment[idxBottom1] = 0
+      this.sediment[idxBottom2] = 0
+
+      // Top rows (just in case)
+      const idxTop1 = x
+      const idxTop2 = x + this.width
+      // Don't drain top if that's where source is? Source is at y=2.
+      // So y=0,1 are "behind" the source.
+      this.waterHeight[idxTop1] = 0
+      this.sediment[idxTop1] = 0
+    }
   }
 
   private addWater(dt: number, flowRate: number, isRaining: boolean) {
@@ -296,13 +339,13 @@ export class ErosionSystem {
       } else {
         // Deposit
         const depositAmount = this.KD * (currentSediment - capacity) * dt
-        // Clamp deposition to prevent massive spikes
-        const actualDeposit = Math.min(depositAmount, currentSediment, 0.05)
+        // Clamp deposition to prevent massive spikes - Stricter clamp
+        const actualDeposit = Math.min(depositAmount, currentSediment, 0.01)
 
         terrainHeight[i] += actualDeposit
 
-        // Clamp max height to prevent upward spikes
-        if (terrainHeight[i] > 3.0) terrainHeight[i] = 3.0
+        // Clamp max height to prevent upward spikes - Stricter clamp
+        if (terrainHeight[i] > 1.5) terrainHeight[i] = 1.5
 
         this.sediment[i] -= actualDeposit
       }
