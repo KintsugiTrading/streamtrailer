@@ -107,16 +107,28 @@ export function StreamControls({ streamState, setStreamState }: StreamControlsPr
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-slate-300 text-xs">
-                    Terrain Slope: {(streamState.slope * 100).toFixed(1)}%
-                  </Label>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-300">Terrain Slope: {(streamState.slope * 100).toFixed(1)}%</span>
+                  </div>
                   <Slider
                     value={[streamState.slope]}
-                    onValueChange={([value]) => setStreamState({ ...streamState, slope: value })}
-                    min={0.01}
+                    min={0}
                     max={0.1}
-                    step={0.005}
-                    className="w-full"
+                    step={0.001}
+                    onValueChange={(val) => setStreamState((prev) => ({ ...prev, slope: val[0] }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-300">Erosion Rate: {(streamState.erosionRate * 100).toFixed(0)}%</span>
+                  </div>
+                  <Slider
+                    value={[streamState.erosionRate]}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    onValueChange={(val) => setStreamState((prev) => ({ ...prev, erosionRate: val[0] }))}
                   />
                 </div>
               </div>

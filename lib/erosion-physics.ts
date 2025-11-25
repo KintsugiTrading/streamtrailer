@@ -59,7 +59,7 @@ export class ErosionSystem {
     this.velocityY.fill(0)
   }
 
-  simulate(terrainHeight: Float32Array, dt: number, flowRate: number, isRaining: boolean) {
+  simulate(terrainHeight: Float32Array, dt: number, flowRate: number, isRaining: boolean, erosionRateMultiplier: number = 1.0) {
     // 1. Add Water (Rain/Source)
     this.addWater(dt, flowRate, isRaining)
 
@@ -70,7 +70,7 @@ export class ErosionSystem {
     this.updateWaterAndVelocity(dt)
 
     // 4. Erosion and Deposition
-    this.erosionDeposition(terrainHeight, dt)
+    this.erosionDeposition(terrainHeight, dt, erosionRateMultiplier)
 
     // 5. Sediment Transport (Advection)
     this.transportSediment(dt)
@@ -252,7 +252,7 @@ export class ErosionSystem {
     }
   }
 
-  private erosionDeposition(terrainHeight: Float32Array, dt: number) {
+  private erosionDeposition(terrainHeight: Float32Array, dt: number, erosionRateMultiplier: number) {
     const size = this.width * this.height
 
     for (let i = 0; i < size; i++) {
@@ -288,11 +288,16 @@ export class ErosionSystem {
 
       if (capacity > currentSediment) {
         // Erode
-        const erodeAmount = this.KS * (capacity - currentSediment) * dt
+        const erodeAmount = this.KS * (capacity - currentSediment) * dt * erosionRateMultiplier
         // Don't erode more than available soil (and maybe don't dig too deep?)
         const actualErode = Math.min(erodeAmount, 0.05) // Cap per step
 
         terrainHeight[i] -= actualErode
+
+        // Clamp height to prevent spikes through the bottom
+        // Assuming base is around 0 or slightly positive. Let's clamp to 0.01
+        if (terrainHeight[i] < 0.01) terrainHeight[i] = 0.01
+
         this.sediment[i] += actualErode
       } else {
         // Deposit

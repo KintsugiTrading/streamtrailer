@@ -15,6 +15,7 @@ export interface StreamState {
   slope: number
   selectedTool: Tool
   showGrid: boolean
+  erosionRate: number // 0 to 1
   plants: PlantInstance[] // Added plants state to track vegetation
 }
 
@@ -32,6 +33,7 @@ export function StreamTrailer() {
     slope: 0.02,
     selectedTool: "none",
     showGrid: true,
+    erosionRate: 0.1,
     plants: [], // Initialize empty plants array
   })
 

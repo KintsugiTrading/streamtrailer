@@ -82,7 +82,7 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange }: 
 
     // We run simulation even if waterFlow is false, to allow water to drain/evaporate
     // Only stop if no water and no flow? For now, just run it.
-    erosionSystem.simulate(heights, dt, streamState.flowRate, streamState.waterFlow)
+    erosionSystem.simulate(heights, dt, streamState.flowRate, streamState.waterFlow, streamState.erosionRate)
 
     const positions = geometry.attributes.position
     const colorAttr = geometry.attributes.color
