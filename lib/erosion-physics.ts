@@ -81,7 +81,51 @@ export class ErosionSystem {
     // 7. Open Boundary (Drain at bottom)
     this.applyOpenBoundary()
 
+    // 8. Smoothing (Box Blur)
+    this.smoothTerrain(terrainHeight)
+
     return terrainHeight
+  }
+
+  private smoothTerrain(terrainHeight: Float32Array) {
+    // Simple 3x3 box blur to smooth out spikes
+    // We blend the smoothed result with the original to control strength
+    const blendFactor = 0.1 // 10% smooth, 90% original per frame
+
+    // We need a copy to read from while writing to original
+    // Or we can do it in place with some artifacts, but copy is safer
+    // For performance, maybe just do in place but be careful? 
+    // Let's use a small buffer or just do it.
+    // Actually, we can just iterate and use neighbors.
+
+    // To avoid allocating a full new array every frame, we can use a static buffer or just accept the cost.
+    // Given the size (64x128), allocation is cheap.
+    const smoothed = new Float32Array(terrainHeight)
+
+    for (let i = 0; i < terrainHeight.length; i++) {
+      const x = i % this.width
+      const y = Math.floor(i / this.width)
+
+      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) continue
+
+      let sum = 0
+      let count = 0
+
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const idx = (y + dy) * this.width + (x + dx)
+          sum += terrainHeight[idx]
+          count++
+        }
+      }
+
+      smoothed[i] = sum / count
+    }
+
+    // Blend back
+    for (let i = 0; i < terrainHeight.length; i++) {
+      terrainHeight[i] = terrainHeight[i] * (1 - blendFactor) + smoothed[i] * blendFactor
+    }
   }
 
   private applyOpenBoundary() {
