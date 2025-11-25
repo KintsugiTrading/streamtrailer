@@ -1,6 +1,5 @@
 "use client"
 import { TerrainMesh } from "./terrain-mesh"
-import { WaterSystem } from "./water-system"
 import { WaterSurface } from "./water-surface"
 import { TrailerContainer } from "./trailer-container"
 import { Vegetation } from "./vegetation"
@@ -39,15 +38,6 @@ export function TrailerScene({ streamState, setStreamState }: TrailerSceneProps)
       />
       {/* Water surface layer */}
       <WaterSurface erosionSystem={erosionSystem} terrainHeights={heightMap} />
-      {/* Water simulation */}
-      {streamState.waterFlow && (
-        <WaterSystem
-          flowRate={streamState.flowRate}
-          slope={streamState.slope}
-          heightMap={heightMap}
-          plants={streamState.plants}
-        />
-      )}
       {/* Vegetation markers */}
       <Vegetation plants={streamState.plants} /> {/* Pass plants data */}
     </group>

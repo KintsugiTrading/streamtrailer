@@ -461,9 +461,9 @@ export class ErosionSystem {
   }
 
   private smoothDepositionZones(terrainHeight: Float32Array) {
-    // Extra smoothing pass for the bottom 10% of the map where sediment piles up
+    // Extra smoothing pass for the bottom 5% of the map where sediment piles up
     // This uses a stronger 8-neighbor average to eliminate spiky deposits
-    const zoneStartY = Math.floor(this.height * 0.9) // Bottom 10% of map
+    const zoneStartY = Math.floor(this.height * 0.95) // Bottom 5% of map
     const newHeight = new Float32Array(terrainHeight)
 
     for (let y = zoneStartY; y < this.height - 1; y++) {
