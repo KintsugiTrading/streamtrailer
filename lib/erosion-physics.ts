@@ -27,9 +27,9 @@ export class ErosionSystem {
   // Erosion parameters
   KC = 0.5  // Sediment capacity constant
   KS = 0.3  // Dissolving constant (Erosion rate)
-  KD = 0.3  // Deposition constant
+  KD = 0.2  // Deposition constant (Reduced to prevent rapid piling)
   KE = 0.025 // Evaporation constant (Increased to help clear water)
-  K_SMOOTH = 0.15 // Terrain smoothing factor
+  K_SMOOTH = 0.5 // Terrain smoothing factor (Increased significantly)
 
   constructor(width: number, height: number) {
     this.width = width
@@ -441,8 +441,8 @@ export class ErosionSystem {
 
       // Smooth towards average (diffusion)
       // Higher smoothing in areas with water (recently eroded)
-      const waterFactor = Math.min(1, this.waterHeight[i] * 5) // 0-1 based on water presence
-      const effectiveSmoothingAmount = smoothingAmount * (0.5 + waterFactor * 0.5)
+      const waterFactor = Math.min(1, this.waterHeight[i] * 10) // More sensitive to water
+      const effectiveSmoothingAmount = smoothingAmount * (0.2 + waterFactor * 0.8) // Stronger effect in water
 
       newHeight[i] = h + (avgNeighbor - h) * effectiveSmoothingAmount
 
