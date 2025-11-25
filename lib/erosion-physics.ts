@@ -297,10 +297,8 @@ export class ErosionSystem {
       const y = Math.floor(i / this.width)
 
       // Process boundaries for erosion
-      // if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) continue
-      // Allow erosion at boundaries (except maybe x boundaries to keep walls?)
-      if (x <= 0 || x >= this.width - 1) continue // Keep side walls
-      // Allow y boundaries to erode (open ends)
+      // Skip boundaries to prevent "cliff" effect into virtual sink
+      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) continue
 
       // Calculate tilt/slope
       const idxL = i - 1
