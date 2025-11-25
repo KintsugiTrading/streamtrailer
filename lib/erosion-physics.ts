@@ -83,8 +83,7 @@ export class ErosionSystem {
     this.smoothTerrain(terrainHeight, dt)
 
     // 8. Open Boundary (Drain at bottom)
-    // No longer needed manual clearing, flux handles it
-    // this.applyOpenBoundary()
+    this.applyOpenBoundary()
 
     return terrainHeight
   }
@@ -109,15 +108,18 @@ export class ErosionSystem {
     // or just the one where water accumulates.
     // Let's drain the last 2 rows and first 2 rows.
 
-    for (let x = 0; x < this.width; x++) {
-      // Bottom rows (if that's where it flows)
-      const idxBottom1 = (this.height - 1) * this.width + x
-      const idxBottom2 = (this.height - 2) * this.width + x
+    // Expanded drainage zone to prevent sediment piling at boundary
+    const drainageRows = 10
 
-      this.waterHeight[idxBottom1] = 0
-      this.waterHeight[idxBottom2] = 0
-      this.sediment[idxBottom1] = 0
-      this.sediment[idxBottom2] = 0
+    for (let x = 0; x < this.width; x++) {
+      // Bottom rows - expanded drainage zone
+      for (let dr = 0; dr < drainageRows; dr++) {
+        const idx = (this.height - 1 - dr) * this.width + x
+        if (idx >= 0 && idx < this.waterHeight.length) {
+          this.waterHeight[idx] = 0
+          this.sediment[idx] = 0
+        }
+      }
 
       // Top rows (just in case)
       const idxTop1 = x
@@ -163,10 +165,14 @@ export class ErosionSystem {
       const x = i % this.width
       const y = Math.floor(i / this.width)
 
-      // Boundaries - Handle open boundaries
-      // Allow flow off the edges (Virtual sink)
-      // if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) { ... }
-      // We will process boundaries now.
+      // Boundaries
+      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) {
+        this.fluxL[i] = 0
+        this.fluxR[i] = 0
+        this.fluxT[i] = 0
+        this.fluxB[i] = 0
+        continue
+      }
 
       const h = terrainHeight[i] + this.waterHeight[i]
 
@@ -185,11 +191,10 @@ export class ErosionSystem {
       const hB = terrainHeight[idxB] + this.waterHeight[idxB]
 
       // Hydrostatic pressure differences
-      // For boundaries, assume neighbor is lower (sink)
-      const valL = idxL >= 0 && x > 0 ? Math.max(0, h - (terrainHeight[idxL] + this.waterHeight[idxL])) : 0 // Closed left
-      const valR = idxR < size && x < this.width - 1 ? Math.max(0, h - (terrainHeight[idxR] + this.waterHeight[idxR])) : 0 // Closed right
-      const valT = idxT < size ? Math.max(0, h - (terrainHeight[idxT] + this.waterHeight[idxT])) : Math.max(0, h - (terrainHeight[i] - 1.0)) // Open Top (Sink)
-      const valB = idxB >= 0 ? Math.max(0, h - (terrainHeight[idxB] + this.waterHeight[idxB])) : Math.max(0, h - (terrainHeight[i] - 1.0)) // Open Bottom (Sink)
+      const valL = Math.max(0, h - hL)
+      const valR = Math.max(0, h - hR)
+      const valT = Math.max(0, h - hT)
+      const valB = Math.max(0, h - hB)
 
       // Update fluxes
       // F_new = max(0, F_old + dt * A * (g * deltaH) / L)
@@ -224,9 +229,11 @@ export class ErosionSystem {
       const x = i % this.width
       const y = Math.floor(i / this.width)
 
-      // Process boundaries for velocity update
-      // if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) ... continue
-      // We want to update velocity at boundaries too
+      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) {
+        this.velocityX[i] = 0
+        this.velocityY[i] = 0
+        continue
+      }
 
       // Inflows
       const idxL = i - 1
@@ -238,7 +245,7 @@ export class ErosionSystem {
         this.fluxR[idxL] + // In from Left
         this.fluxL[idxR] + // In from Right
         this.fluxB[idxT] + // In from Top
-        (idxB >= 0 ? this.fluxT[idxB] : 0)   // In from Bottom
+        this.fluxT[idxB]   // In from Bottom
 
       const outflow = this.fluxL[i] + this.fluxR[i] + this.fluxT[i] + this.fluxB[i]
 
@@ -256,14 +263,14 @@ export class ErosionSystem {
       // fluxL[i] is flow OUT to Left.
       // fluxR[i-1] is flow IN from Left.
 
-      const flowInL = idxL >= 0 ? this.fluxR[idxL] : 0
+      const flowInL = this.fluxR[idxL]
       const flowOutL = this.fluxL[i]
-      const flowInR = idxR < size ? this.fluxL[idxR] : 0
+      const flowInR = this.fluxL[idxR]
       const flowOutR = this.fluxR[i]
 
-      const flowInT = idxT < size ? this.fluxB[idxT] : 0
+      const flowInT = this.fluxB[idxT]
       const flowOutT = this.fluxT[i]
-      const flowInB = idxB >= 0 ? this.fluxT[idxB] : 0
+      const flowInB = this.fluxT[idxB]
       const flowOutB = this.fluxB[i]
 
       // X velocity (Left-Right)
@@ -296,9 +303,9 @@ export class ErosionSystem {
       const x = i % this.width
       const y = Math.floor(i / this.width)
 
-      // Process boundaries for erosion
-      // Skip boundaries to prevent "cliff" effect into virtual sink
-      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) continue
+      // Skip boundaries and drainage zone
+      const drainageZone = 10
+      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1 || y >= this.height - drainageZone) continue
 
       // Calculate tilt/slope
       const idxL = i - 1
@@ -306,14 +313,14 @@ export class ErosionSystem {
       const idxT = i + this.width
       const idxB = i - this.width
 
-      // Gradient
       const h = terrainHeight[i]
-      const hL = idxL >= 0 ? terrainHeight[idxL] : h
-      const hR = idxR < size ? terrainHeight[idxR] : h
-      const hT = idxT < size ? terrainHeight[idxT] : h - 0.1 // Virtual lower neighbor
-      const hB = idxB >= 0 ? terrainHeight[idxB] : h - 0.1 // Virtual lower neighbor
+      const hL = terrainHeight[idxL]
+      const hR = terrainHeight[idxR]
+      const hT = terrainHeight[idxT]
+      const hB = terrainHeight[idxB]
 
-      const dHdX = (hR - hL) / (2 * this.CELL_AREA)
+      // Gradient
+      const dHdX = (hR - hL) / (2 * this.CELL_AREA) // Simplified
       const dHdY = (hT - hB) / (2 * this.CELL_AREA)
 
       const slope = Math.sqrt(dHdX * dHdX + dHdY * dHdY)
@@ -420,9 +427,8 @@ export class ErosionSystem {
       const x = i % this.width
       const y = Math.floor(i / this.width)
 
-      // Skip side boundaries only
-      if (x <= 0 || x >= this.width - 1) continue
-      // Process Y boundaries for smoothing
+      // Skip boundaries
+      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) continue
 
       const h = terrainHeight[i]
       const idxL = i - 1
@@ -430,10 +436,10 @@ export class ErosionSystem {
       const idxT = i + this.width
       const idxB = i - this.width
 
-      const hL = idxL >= 0 ? terrainHeight[idxL] : h
-      const hR = idxR < terrainHeight.length ? terrainHeight[idxR] : h
-      const hT = idxT < terrainHeight.length ? terrainHeight[idxT] : h
-      const hB = idxB >= 0 ? terrainHeight[idxB] : h
+      const hL = terrainHeight[idxL]
+      const hR = terrainHeight[idxR]
+      const hT = terrainHeight[idxT]
+      const hB = terrainHeight[idxB]
 
       // Calculate average of neighbors
       const avgNeighbor = (hL + hR + hT + hB) / 4
