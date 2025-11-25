@@ -5,6 +5,7 @@ import { useFrame } from "@react-three/fiber"
 import * as THREE from "three"
 import type { StreamState } from "./stream-trailer"
 import { createNoise2D } from "simplex-noise"
+import { ErosionSystem } from "../lib/erosion-physics"
 
 interface TerrainMeshProps {
   streamState: StreamState
@@ -20,7 +21,7 @@ export const SIZE_Z = 15
 export function TerrainMesh({ streamState, setStreamState, onHeightMapChange }: TerrainMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null)
 
-  const { geometry, heights } = useMemo(() => {
+  const { geometry, heights, baseColors } = useMemo(() => {
     const geo = new THREE.PlaneGeometry(SIZE_X, SIZE_Z, WIDTH - 1, HEIGHT - 1)
     geo.rotateX(-Math.PI / 2)
 
@@ -55,8 +56,14 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange }: 
     geo.setAttribute("color", new THREE.BufferAttribute(colors, 3))
     geo.computeVertexNormals()
 
-    return { geometry: geo, heights: heightData }
+    // Store base colors for restoration when dry
+    const baseColors = new Float32Array(colors)
+
+    return { geometry: geo, heights: heightData, baseColors }
   }, [])
+
+  // Initialize Erosion System
+  const erosionSystem = useMemo(() => new ErosionSystem(WIDTH, HEIGHT), [])
 
   // Initial height map update
   useEffect(() => {
@@ -67,39 +74,70 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange }: 
 
   // Erosion simulation
   useFrame((_, delta) => {
-    if (!streamState.waterFlow || !geometry) return
+    if (!geometry) return
+
+    // Run simulation
+    // Clamp delta to avoid instability
+    const dt = Math.min(delta, 0.05)
+
+    // We run simulation even if waterFlow is false, to allow water to drain/evaporate
+    // Only stop if no water and no flow? For now, just run it.
+    erosionSystem.simulate(heights, dt, streamState.flowRate, streamState.waterFlow)
 
     const positions = geometry.attributes.position
     const colorAttr = geometry.attributes.color
     if (!positions || !colorAttr) return
 
-    const flowStrength = streamState.flowRate * delta * 3
-    let changed = false
+    let changed = true // Always update for water animation
 
     for (let i = 0; i < heights.length; i++) {
-      const x = i % WIDTH
-      const y = Math.floor(i / WIDTH)
+      // Update height
+      positions.setY(i, heights[i])
 
-      if (x > 0 && x < WIDTH - 1 && y > 0 && y < HEIGHT - 1) {
-        const currentH = heights[i]
-        const neighbors = [i + 1, i - 1, i + WIDTH, i - WIDTH]
-        const neighborIdx = neighbors[Math.floor(Math.random() * 4)]
-        const neighborH = heights[neighborIdx]
+      // Update color based on water depth
+      const waterDepth = erosionSystem.waterHeight[i]
 
-        if (neighborH < currentH) {
-          const diff = currentH - neighborH
-          const transfer = Math.min(diff * 0.3, flowStrength)
+      if (waterDepth > 0.005) {
+        // Water visualization
+        // Deep water = Darker Blue
+        // Shallow water = Lighter Blue / White foam
+        const depthFactor = Math.min(1, waterDepth * 10)
 
-          heights[i] -= transfer
-          heights[neighborIdx] += transfer
+        // Mix between base color (underwater) and water color
+        // Simple blue for now:
+        colorAttr.setXYZ(
+          i,
+          0.2 * (1 - depthFactor) + 0.1 * depthFactor,
+          0.5 * (1 - depthFactor) + 0.3 * depthFactor,
+          0.8 * (1 - depthFactor) + 0.6 * depthFactor
+        )
+      } else {
+        // Dry - restore base color
+        // We need to access the base colors. 
+        // Since we didn't store baseColors in a ref that is accessible here easily without re-creating logic,
+        // we added it to the useMemo return.
+        // We need to access it from the useMemo result.
+        // But useMemo result is destructured above.
+        // We need to update the destructuring.
 
-          positions.setY(i, heights[i])
-          positions.setY(neighborIdx, heights[neighborIdx])
+        // Accessing baseColors from the closure of useMemo might be tricky if we don't capture it.
+        // Actually, we returned `baseColors` from useMemo, but we need to capture it in the component scope.
+        // Let's fix the destructuring in the next step or assume it's available?
+        // No, I need to update the destructuring line too.
 
-          // Darken wet areas
-          colorAttr.setXYZ(i, 0.55, 0.5, 0.35)
+        // I will assume I can access `baseColors` if I update the destructuring line.
+        // Wait, I can't update the destructuring line in this chunk because it's far away.
+        // I should have included it in the previous chunk or made a separate chunk.
+        // I will use `baseColors` here, and I MUST ensure I update the destructuring in the other chunk.
 
-          changed = true
+        // Actually, I can just read the current color? No, it might be blue from previous frame.
+        // I'll use a fixed sand color for now if I can't access baseColors, 
+        // OR I will update the destructuring line in a separate chunk.
+        // I'll update the destructuring line in a separate chunk.
+
+        // For now, let's assume `baseColors` is available.
+        if (baseColors) {
+          colorAttr.setXYZ(i, baseColors[i * 3], baseColors[i * 3 + 1], baseColors[i * 3 + 2])
         }
       }
     }
