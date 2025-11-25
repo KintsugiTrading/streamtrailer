@@ -124,7 +124,10 @@ export class ErosionSystem {
 
     // Blend back
     for (let i = 0; i < terrainHeight.length; i++) {
-      terrainHeight[i] = terrainHeight[i] * (1 - blendFactor) + smoothed[i] * blendFactor
+      // Only smooth if there is water or sediment activity
+      if (this.waterHeight[i] > 0.001 || this.sediment[i] > 0.001) {
+        terrainHeight[i] = terrainHeight[i] * (1 - blendFactor) + smoothed[i] * blendFactor
+      }
     }
   }
 
