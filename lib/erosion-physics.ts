@@ -28,7 +28,7 @@ export class ErosionSystem {
   KC = 0.5  // Sediment capacity constant
   KS = 0.3  // Dissolving constant (Erosion rate)
   KD = 0.3  // Deposition constant
-  KE = 0.015 // Evaporation constant
+  KE = 0.025 // Evaporation constant (Increased to help clear water)
 
   constructor(width: number, height: number) {
     this.width = width
@@ -93,22 +93,16 @@ export class ErosionSystem {
     // If z goes from -SIZE_Z/2 to SIZE_Z/2.
     // Let's assume we want water at the "high" end.
 
-    // Adding rain everywhere for general erosion
-    const rainAmount = flowRate * dt * 0.1
-    for (let i = 0; i < this.waterHeight.length; i++) {
-      this.waterHeight[i] += rainAmount
-    }
-
-    // Optional: Add a river source at the top
-    const sourceWidth = Math.floor(this.width * 0.2)
+    // Hose source at the top center
+    const sourceWidth = 4 // Focused hose width
     const startX = Math.floor((this.width - sourceWidth) / 2)
     const startY = 2 // Near the top edge (High ground)
 
-    for (let y = startY; y < startY + 5; y++) {
+    for (let y = startY; y < startY + 2; y++) {
       for (let x = startX; x < startX + sourceWidth; x++) {
         const idx = y * this.width + x
         if (idx < this.waterHeight.length) {
-          this.waterHeight[idx] += flowRate * dt * 5.0
+          this.waterHeight[idx] += flowRate * dt * 10.0 // Higher intensity for hose
         }
       }
     }
@@ -243,8 +237,8 @@ export class ErosionSystem {
       const avgWaterHeight = this.waterHeight[i] // Simplified
 
       if (avgWaterHeight > 0.0001) {
-        this.velocityX[i] = u / (this.CELL_AREA * avgWaterHeight) // Simplified scaling
-        this.velocityY[i] = v / (this.CELL_AREA * avgWaterHeight)
+        this.velocityX[i] = (u / (this.CELL_AREA * avgWaterHeight)) * 0.98 // Damping
+        this.velocityY[i] = (v / (this.CELL_AREA * avgWaterHeight)) * 0.98 // Damping
       } else {
         this.velocityX[i] = 0
         this.velocityY[i] = 0
@@ -302,9 +296,14 @@ export class ErosionSystem {
       } else {
         // Deposit
         const depositAmount = this.KD * (currentSediment - capacity) * dt
-        const actualDeposit = Math.min(depositAmount, currentSediment)
+        // Clamp deposition to prevent massive spikes
+        const actualDeposit = Math.min(depositAmount, currentSediment, 0.05)
 
         terrainHeight[i] += actualDeposit
+
+        // Clamp max height to prevent upward spikes
+        if (terrainHeight[i] > 3.0) terrainHeight[i] = 3.0
+
         this.sediment[i] -= actualDeposit
       }
     }
