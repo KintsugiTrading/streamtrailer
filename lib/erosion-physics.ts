@@ -29,6 +29,7 @@ export class ErosionSystem {
   KS = 0.3  // Dissolving constant (Erosion rate)
   KD = 0.3  // Deposition constant
   KE = 0.025 // Evaporation constant (Increased to help clear water)
+  K_SMOOTH = 0.15 // Terrain smoothing factor
 
   constructor(width: number, height: number) {
     this.width = width
@@ -78,57 +79,13 @@ export class ErosionSystem {
     // 6. Evaporation
     this.evaporate(dt)
 
-    // 7. Open Boundary (Drain at bottom)
+    // 7. Terrain Smoothing (creates smooth, realistic channels)
+    this.smoothTerrain(terrainHeight, dt)
+
+    // 8. Open Boundary (Drain at bottom)
     this.applyOpenBoundary()
 
-    // 8. Smoothing (Box Blur)
-    this.smoothTerrain(terrainHeight)
-
     return terrainHeight
-  }
-
-  private smoothTerrain(terrainHeight: Float32Array) {
-    // Simple 3x3 box blur to smooth out spikes
-    // We blend the smoothed result with the original to control strength
-    const blendFactor = 0.1 // 10% smooth, 90% original per frame
-
-    // We need a copy to read from while writing to original
-    // Or we can do it in place with some artifacts, but copy is safer
-    // For performance, maybe just do in place but be careful? 
-    // Let's use a small buffer or just do it.
-    // Actually, we can just iterate and use neighbors.
-
-    // To avoid allocating a full new array every frame, we can use a static buffer or just accept the cost.
-    // Given the size (64x128), allocation is cheap.
-    const smoothed = new Float32Array(terrainHeight)
-
-    for (let i = 0; i < terrainHeight.length; i++) {
-      const x = i % this.width
-      const y = Math.floor(i / this.width)
-
-      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) continue
-
-      let sum = 0
-      let count = 0
-
-      for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-          const idx = (y + dy) * this.width + (x + dx)
-          sum += terrainHeight[idx]
-          count++
-        }
-      }
-
-      smoothed[i] = sum / count
-    }
-
-    // Blend back
-    for (let i = 0; i < terrainHeight.length; i++) {
-      // Only smooth if there is water or sediment activity
-      if (this.waterHeight[i] > 0.001 || this.sediment[i] > 0.001) {
-        terrainHeight[i] = terrainHeight[i] * (1 - blendFactor) + smoothed[i] * blendFactor
-      }
-    }
   }
 
   private applyOpenBoundary() {
@@ -453,5 +410,50 @@ export class ErosionSystem {
     const v1 = v01 * (1 - ax) + v11 * ax
 
     return v0 * (1 - ay) + v1 * ay
+  }
+
+  private smoothTerrain(terrainHeight: Float32Array, dt: number) {
+    // Terrain diffusion/smoothing to create realistic smooth surfaces
+    // This simulates how loose sediment naturally settles and spreads
+    const newHeight = new Float32Array(terrainHeight)
+    const smoothingAmount = this.K_SMOOTH * dt
+
+    for (let i = 0; i < terrainHeight.length; i++) {
+      const x = i % this.width
+      const y = Math.floor(i / this.width)
+
+      // Skip boundaries
+      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) continue
+
+      const h = terrainHeight[i]
+      const idxL = i - 1
+      const idxR = i + 1
+      const idxT = i + this.width
+      const idxB = i - this.width
+
+      const hL = terrainHeight[idxL]
+      const hR = terrainHeight[idxR]
+      const hT = terrainHeight[idxT]
+      const hB = terrainHeight[idxB]
+
+      // Calculate average of neighbors
+      const avgNeighbor = (hL + hR + hT + hB) / 4
+
+      // Smooth towards average (diffusion)
+      // Higher smoothing in areas with water (recently eroded)
+      const waterFactor = Math.min(1, this.waterHeight[i] * 5) // 0-1 based on water presence
+      const effectiveSmoothingAmount = smoothingAmount * (0.5 + waterFactor * 0.5)
+
+      newHeight[i] = h + (avgNeighbor - h) * effectiveSmoothingAmount
+
+      // Clamp to valid range
+      if (newHeight[i] < 0.01) newHeight[i] = 0.01
+      if (newHeight[i] > 1.5) newHeight[i] = 1.5
+    }
+
+    // Copy smoothed heights back
+    for (let i = 0; i < terrainHeight.length; i++) {
+      terrainHeight[i] = newHeight[i]
+    }
   }
 }
