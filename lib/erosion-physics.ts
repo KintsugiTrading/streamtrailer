@@ -348,8 +348,8 @@ export class ErosionSystem {
 
         terrainHeight[i] += actualDeposit
 
-        // Clamp max height to prevent upward spikes - Stricter clamp
-        if (terrainHeight[i] > 1.5) terrainHeight[i] = 1.5
+        // Clamp max height to prevent upward spikes - Allow taller mountains
+        if (terrainHeight[i] > 2.5) terrainHeight[i] = 2.5
 
         this.sediment[i] -= actualDeposit
       }
@@ -448,7 +448,7 @@ export class ErosionSystem {
 
       // Clamp to valid range
       if (newHeight[i] < 0.01) newHeight[i] = 0.01
-      if (newHeight[i] > 1.5) newHeight[i] = 1.5
+      if (newHeight[i] > 2.5) newHeight[i] = 2.5
     }
 
     // Copy smoothed heights back

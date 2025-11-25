@@ -11,6 +11,7 @@ interface TerrainMeshProps {
   streamState: StreamState
   setStreamState?: (state: StreamState | ((prev: StreamState) => StreamState)) => void
   onHeightMapChange?: (heights: Float32Array) => void
+  onErosionSystemChange?: (erosionSystem: ErosionSystem) => void
 }
 
 export const WIDTH = 64
@@ -18,7 +19,7 @@ export const HEIGHT = 128
 export const SIZE_X = 9
 export const SIZE_Z = 15
 
-export function TerrainMesh({ streamState, setStreamState, onHeightMapChange }: TerrainMeshProps) {
+export function TerrainMesh({ streamState, setStreamState, onHeightMapChange, onErosionSystemChange }: TerrainMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null)
 
   const { geometry, heights, baseColors } = useMemo(() => {
@@ -65,6 +66,13 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange }: 
   // Initialize Erosion System
   const erosionSystem = useMemo(() => new ErosionSystem(WIDTH, HEIGHT), [])
 
+  // Expose erosion system
+  useEffect(() => {
+    if (onErosionSystemChange) {
+      onErosionSystemChange(erosionSystem)
+    }
+  }, [onErosionSystemChange, erosionSystem])
+
   // Initial height map update
   useEffect(() => {
     if (onHeightMapChange && heights) {
@@ -88,57 +96,15 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange }: 
     const colorAttr = geometry.attributes.color
     if (!positions || !colorAttr) return
 
-    let changed = true // Always update for water animation
+    let changed = true // Always update for animation
 
     for (let i = 0; i < heights.length; i++) {
       // Update height
       positions.setY(i, heights[i])
 
-      // Update color based on water depth
-      const waterDepth = erosionSystem.waterHeight[i]
-
-      if (waterDepth > 0.005) {
-        // Water visualization
-        // Deep water = Darker Blue
-        // Shallow water = Lighter Blue / White foam
-        const depthFactor = Math.min(1, waterDepth * 10)
-
-        // Mix between base color (underwater) and water color
-        // Simple blue for now:
-        colorAttr.setXYZ(
-          i,
-          0.2 * (1 - depthFactor) + 0.1 * depthFactor,
-          0.5 * (1 - depthFactor) + 0.3 * depthFactor,
-          0.8 * (1 - depthFactor) + 0.6 * depthFactor
-        )
-      } else {
-        // Dry - restore base color
-        // We need to access the base colors. 
-        // Since we didn't store baseColors in a ref that is accessible here easily without re-creating logic,
-        // we added it to the useMemo return.
-        // We need to access it from the useMemo result.
-        // But useMemo result is destructured above.
-        // We need to update the destructuring.
-
-        // Accessing baseColors from the closure of useMemo might be tricky if we don't capture it.
-        // Actually, we returned `baseColors` from useMemo, but we need to capture it in the component scope.
-        // Let's fix the destructuring in the next step or assume it's available?
-        // No, I need to update the destructuring line too.
-
-        // I will assume I can access `baseColors` if I update the destructuring line.
-        // Wait, I can't update the destructuring line in this chunk because it's far away.
-        // I should have included it in the previous chunk or made a separate chunk.
-        // I will use `baseColors` here, and I MUST ensure I update the destructuring in the other chunk.
-
-        // Actually, I can just read the current color? No, it might be blue from previous frame.
-        // I'll use a fixed sand color for now if I can't access baseColors, 
-        // OR I will update the destructuring line in a separate chunk.
-        // I'll update the destructuring line in a separate chunk.
-
-        // For now, let's assume `baseColors` is available.
-        if (baseColors) {
-          colorAttr.setXYZ(i, baseColors[i * 3], baseColors[i * 3 + 1], baseColors[i * 3 + 2])
-        }
+      // Always restore base sand color (no more blue spiky vertices)
+      if (baseColors) {
+        colorAttr.setXYZ(i, baseColors[i * 3], baseColors[i * 3 + 1], baseColors[i * 3 + 2])
       }
     }
 
