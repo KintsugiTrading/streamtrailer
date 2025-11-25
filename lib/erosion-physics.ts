@@ -83,7 +83,8 @@ export class ErosionSystem {
     this.smoothTerrain(terrainHeight, dt)
 
     // 8. Open Boundary (Drain at bottom)
-    this.applyOpenBoundary()
+    // No longer needed manual clearing, flux handles it
+    // this.applyOpenBoundary()
 
     return terrainHeight
   }
@@ -162,14 +163,10 @@ export class ErosionSystem {
       const x = i % this.width
       const y = Math.floor(i / this.width)
 
-      // Boundaries
-      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) {
-        this.fluxL[i] = 0
-        this.fluxR[i] = 0
-        this.fluxT[i] = 0
-        this.fluxB[i] = 0
-        continue
-      }
+      // Boundaries - Handle open boundaries
+      // Allow flow off the edges (Virtual sink)
+      // if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) { ... }
+      // We will process boundaries now.
 
       const h = terrainHeight[i] + this.waterHeight[i]
 
@@ -188,10 +185,11 @@ export class ErosionSystem {
       const hB = terrainHeight[idxB] + this.waterHeight[idxB]
 
       // Hydrostatic pressure differences
-      const valL = Math.max(0, h - hL)
-      const valR = Math.max(0, h - hR)
-      const valT = Math.max(0, h - hT)
-      const valB = Math.max(0, h - hB)
+      // For boundaries, assume neighbor is lower (sink)
+      const valL = idxL >= 0 && x > 0 ? Math.max(0, h - (terrainHeight[idxL] + this.waterHeight[idxL])) : 0 // Closed left
+      const valR = idxR < size && x < this.width - 1 ? Math.max(0, h - (terrainHeight[idxR] + this.waterHeight[idxR])) : 0 // Closed right
+      const valT = idxT < size ? Math.max(0, h - (terrainHeight[idxT] + this.waterHeight[idxT])) : Math.max(0, h - (terrainHeight[i] - 1.0)) // Open Top (Sink)
+      const valB = idxB >= 0 ? Math.max(0, h - (terrainHeight[idxB] + this.waterHeight[idxB])) : Math.max(0, h - (terrainHeight[i] - 1.0)) // Open Bottom (Sink)
 
       // Update fluxes
       // F_new = max(0, F_old + dt * A * (g * deltaH) / L)
@@ -226,11 +224,9 @@ export class ErosionSystem {
       const x = i % this.width
       const y = Math.floor(i / this.width)
 
-      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) {
-        this.velocityX[i] = 0
-        this.velocityY[i] = 0
-        continue
-      }
+      // Process boundaries for velocity update
+      // if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) ... continue
+      // We want to update velocity at boundaries too
 
       // Inflows
       const idxL = i - 1
@@ -242,7 +238,7 @@ export class ErosionSystem {
         this.fluxR[idxL] + // In from Left
         this.fluxL[idxR] + // In from Right
         this.fluxB[idxT] + // In from Top
-        this.fluxT[idxB]   // In from Bottom
+        (idxB >= 0 ? this.fluxT[idxB] : 0)   // In from Bottom
 
       const outflow = this.fluxL[i] + this.fluxR[i] + this.fluxT[i] + this.fluxB[i]
 
@@ -260,14 +256,14 @@ export class ErosionSystem {
       // fluxL[i] is flow OUT to Left.
       // fluxR[i-1] is flow IN from Left.
 
-      const flowInL = this.fluxR[idxL]
+      const flowInL = idxL >= 0 ? this.fluxR[idxL] : 0
       const flowOutL = this.fluxL[i]
-      const flowInR = this.fluxL[idxR]
+      const flowInR = idxR < size ? this.fluxL[idxR] : 0
       const flowOutR = this.fluxR[i]
 
-      const flowInT = this.fluxB[idxT]
+      const flowInT = idxT < size ? this.fluxB[idxT] : 0
       const flowOutT = this.fluxT[i]
-      const flowInB = this.fluxT[idxB]
+      const flowInB = idxB >= 0 ? this.fluxT[idxB] : 0
       const flowOutB = this.fluxB[i]
 
       // X velocity (Left-Right)
@@ -300,7 +296,11 @@ export class ErosionSystem {
       const x = i % this.width
       const y = Math.floor(i / this.width)
 
-      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) continue
+      // Process boundaries for erosion
+      // if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) continue
+      // Allow erosion at boundaries (except maybe x boundaries to keep walls?)
+      if (x <= 0 || x >= this.width - 1) continue // Keep side walls
+      // Allow y boundaries to erode (open ends)
 
       // Calculate tilt/slope
       const idxL = i - 1
@@ -308,14 +308,14 @@ export class ErosionSystem {
       const idxT = i + this.width
       const idxB = i - this.width
 
-      const h = terrainHeight[i]
-      const hL = terrainHeight[idxL]
-      const hR = terrainHeight[idxR]
-      const hT = terrainHeight[idxT]
-      const hB = terrainHeight[idxB]
-
       // Gradient
-      const dHdX = (hR - hL) / (2 * this.CELL_AREA) // Simplified
+      const h = terrainHeight[i]
+      const hL = idxL >= 0 ? terrainHeight[idxL] : h
+      const hR = idxR < size ? terrainHeight[idxR] : h
+      const hT = idxT < size ? terrainHeight[idxT] : h - 0.1 // Virtual lower neighbor
+      const hB = idxB >= 0 ? terrainHeight[idxB] : h - 0.1 // Virtual lower neighbor
+
+      const dHdX = (hR - hL) / (2 * this.CELL_AREA)
       const dHdY = (hT - hB) / (2 * this.CELL_AREA)
 
       const slope = Math.sqrt(dHdX * dHdX + dHdY * dHdY)
@@ -422,8 +422,9 @@ export class ErosionSystem {
       const x = i % this.width
       const y = Math.floor(i / this.width)
 
-      // Skip boundaries
-      if (x <= 0 || x >= this.width - 1 || y <= 0 || y >= this.height - 1) continue
+      // Skip side boundaries only
+      if (x <= 0 || x >= this.width - 1) continue
+      // Process Y boundaries for smoothing
 
       const h = terrainHeight[i]
       const idxL = i - 1
@@ -431,10 +432,10 @@ export class ErosionSystem {
       const idxT = i + this.width
       const idxB = i - this.width
 
-      const hL = terrainHeight[idxL]
-      const hR = terrainHeight[idxR]
-      const hT = terrainHeight[idxT]
-      const hB = terrainHeight[idxB]
+      const hL = idxL >= 0 ? terrainHeight[idxL] : h
+      const hR = idxR < terrainHeight.length ? terrainHeight[idxR] : h
+      const hT = idxT < terrainHeight.length ? terrainHeight[idxT] : h
+      const hB = idxB >= 0 ? terrainHeight[idxB] : h
 
       // Calculate average of neighbors
       const avgNeighbor = (hL + hR + hT + hB) / 4
