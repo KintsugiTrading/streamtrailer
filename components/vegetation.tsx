@@ -160,7 +160,7 @@ export function Vegetation({ plants }: VegetationProps) {
         const offsetX = (Math.random() - 0.5) * 0.3
         const offsetZ = (Math.random() - 0.5) * 0.3
         const rotation = Math.random() * Math.PI
-        const scale = g.scale * (0.8 + Math.random() * 0.4)
+        const scale = g.scale * (0.2 + Math.random() * 0.15) // Much smaller grass
 
         // Position directly on the ground (pivot is at bottom)
         dummy.position.set(g.position[0] + offsetX, g.position[1], g.position[2] + offsetZ)

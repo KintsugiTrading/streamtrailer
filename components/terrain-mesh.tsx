@@ -142,12 +142,18 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange, on
           const offsetX = Math.cos(angle) * radius
           const offsetZ = Math.sin(angle) * radius
 
-          newGrass.push({
-            id: Math.random().toString(36).substring(2, 9),
-            position: [point.x + offsetX, point.y, point.z + offsetZ] as [number, number, number],
-            type: "grass" as const,
-            scale: 0.8 + Math.random() * 0.4,
-          })
+          const gx = point.x + offsetX
+          const gz = point.z + offsetZ
+
+          // Check bounds
+          if (Math.abs(gx) < SIZE_X / 2 - 0.2 && Math.abs(gz) < SIZE_Z / 2 - 0.2) {
+            newGrass.push({
+              id: Math.random().toString(36).substring(2, 9),
+              position: [gx, point.y, gz] as [number, number, number],
+              type: "grass" as const,
+              scale: 0.8 + Math.random() * 0.4,
+            })
+          }
         }
 
         setStreamState((prev) => ({
