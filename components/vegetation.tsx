@@ -163,7 +163,7 @@ export function Vegetation({ plants }: VegetationProps) {
     trees.forEach((tree, i) => {
       if (i >= MAX_INSTANCES) return
       dummy.position.set(tree.position[0], tree.position[1], tree.position[2])
-      dummy.scale.setScalar(tree.scale)
+      dummy.scale.setScalar(tree.scale * 0.34) // 66% smaller (34% of original size)
       dummy.updateMatrix()
       treeMesh.setMatrixAt(i, dummy.matrix)
     })
@@ -234,7 +234,7 @@ export function Vegetation({ plants }: VegetationProps) {
     bridges.forEach((b, i) => {
       if (i >= MAX_INSTANCES) return
       dummy.position.set(b.position[0], b.position[1] + 0.1, b.position[2])
-      dummy.rotation.set(0, Math.random() * 0.1, 0) // Slight random rotation
+      dummy.rotation.set(0, (Math.PI / 2) + (Math.random() * 0.1), 0) // Rotated 90 degrees + slight random
       dummy.scale.set(b.scale, b.scale, b.scale)
       dummy.updateMatrix()
       bridgeMesh.setMatrixAt(i, dummy.matrix)
