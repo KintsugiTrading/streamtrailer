@@ -11,7 +11,6 @@ interface TerrainMeshProps {
   streamState: StreamState
   setStreamState?: (state: StreamState | ((prev: StreamState) => StreamState)) => void
   setIsInteracting?: (interacting: boolean) => void
-  touchCount?: number
   onHeightMapChange?: (heights: Float32Array) => void
   onErosionSystemChange?: (erosionSystem: ErosionSystem) => void
 }
@@ -21,7 +20,7 @@ export const HEIGHT = 128
 export const SIZE_X = 9
 export const SIZE_Z = 15
 
-export function TerrainMesh({ streamState, setStreamState, setIsInteracting, touchCount = 0, onHeightMapChange, onErosionSystemChange }: TerrainMeshProps) {
+export function TerrainMesh({ streamState, setStreamState, setIsInteracting, onHeightMapChange, onErosionSystemChange }: TerrainMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null)
 
   const { geometry, heights, baseColors } = useMemo(() => {
@@ -122,9 +121,6 @@ export function TerrainMesh({ streamState, setStreamState, setIsInteracting, tou
 
   const handlePointerDown = (e: THREE.Event & { point: THREE.Vector3; stopPropagation: () => void }) => {
     if (streamState.selectedTool === "none") return
-    // Prevent tool usage if multi-touch (e.g. zooming/panning)
-    if (touchCount >= 2) return
-
     e.stopPropagation()
 
     // Notify parent that interaction started
