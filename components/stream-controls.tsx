@@ -44,201 +44,211 @@ export function StreamControls({ streamState, setStreamState }: StreamControlsPr
   ]
 
   return (
-    <div className="absolute top-4 left-4 right-4 pointer-events-none flex flex-col gap-4 items-start z-50">
-      {/* Toggle Buttons */}
-      <div className="pointer-events-auto flex gap-2">
-        {controlMode === "hidden" ? (
-          <>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setControlMode("full")}
-              className="bg-slate-800/95 border-slate-700 backdrop-blur-sm text-white hover:bg-slate-700"
-            >
-              <Menu className="w-4 h-4 mr-2" />
-              Show Controls
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setControlMode("quick")}
-              className="bg-slate-800/95 border-slate-700 backdrop-blur-sm text-white hover:bg-slate-700"
-            >
-              <Hammer className="w-4 h-4 mr-2" />
-              Quick Tools
-            </Button>
-          </>
-        ) : (
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setControlMode("hidden")}
-            className="bg-slate-800/95 border-slate-700 backdrop-blur-sm text-white hover:bg-slate-700"
-          >
-            <EyeOff className="w-4 h-4 mr-2" />
-            {controlMode === "full" ? "Hide Controls" : "Hide Tools"}
-          </Button>
-        )}
-      </div>
+    <>
+      {/* Backdrop for Quick Tools mode */}
+      {controlMode === "quick" && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 pointer-events-auto"
+          onClick={() => setControlMode("hidden")}
+        />
+      )}
 
-      {/* Main Controls Container */}
-      {controlMode !== "hidden" && (
-        <div className="flex flex-col gap-4 w-full max-w-md animate-in fade-in slide-in-from-top-4 duration-200">
-          {/* Title - Only in Full Mode */}
-          {controlMode === "full" && (
-            <Card className="pointer-events-auto bg-slate-800/95 border-slate-700 backdrop-blur-sm p-4">
-              <div className="flex items-center gap-3">
-                <Waves className="w-6 h-6 text-blue-400" />
-                <div>
-                  <h1 className="text-xl font-bold text-white">Stream Trailer Simulator</h1>
-                  <p className="text-sm text-slate-300">Interactive Hydrology Education Tool</p>
-                </div>
-              </div>
-            </Card>
+      <div className="absolute top-4 left-4 right-4 pointer-events-none flex flex-col gap-4 items-start z-50">
+        {/* Toggle Buttons */}
+        <div className="pointer-events-auto flex gap-2">
+          {controlMode === "hidden" ? (
+            <>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setControlMode("full")}
+                className="bg-slate-800/95 border-slate-700 backdrop-blur-sm text-white hover:bg-slate-700"
+              >
+                <Menu className="w-4 h-4 mr-2" />
+                Show Controls
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setControlMode("quick")}
+                className="bg-slate-800/95 border-slate-700 backdrop-blur-sm text-white hover:bg-slate-700"
+              >
+                <Hammer className="w-4 h-4 mr-2" />
+                Quick Tools
+              </Button>
+            </>
+          ) : (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setControlMode("hidden")}
+              className="bg-slate-800/95 border-slate-700 backdrop-blur-sm text-white hover:bg-slate-700"
+            >
+              <EyeOff className="w-4 h-4 mr-2" />
+              {controlMode === "full" ? "Hide Controls" : "Hide Tools"}
+            </Button>
           )}
+        </div>
 
-          <div className="flex gap-4 flex-wrap max-w-full">
-            {/* Water Controls - Only in Full Mode */}
+        {/* Main Controls Container */}
+        {controlMode !== "hidden" && (
+          <div className="flex flex-col gap-4 w-full max-w-md animate-in fade-in slide-in-from-top-4 duration-200">
+            {/* Title - Only in Full Mode */}
             {controlMode === "full" && (
-              <Card className="pointer-events-auto bg-slate-800/95 border-slate-700 backdrop-blur-sm p-4 min-w-[280px] flex-1">
-                <h2 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                  <Waves className="w-4 h-4 text-blue-400" />
-                  Water Flow
-                </h2>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant={streamState.waterFlow ? "default" : "outline"}
-                      onClick={() => setStreamState({ ...streamState, waterFlow: !streamState.waterFlow })}
-                      className="flex-1"
-                    >
-                      {streamState.waterFlow ? (
-                        <>
-                          <Pause className="w-4 h-4 mr-1" />
-                          Stop Flow
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-4 h-4 mr-1" />
-                          Start Flow
-                        </>
-                      )}
-                    </Button>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-300 text-xs">Flow Rate: {streamState.flowRate.toFixed(2)}</Label>
-                    <Slider
-                      value={[streamState.flowRate]}
-                      onValueChange={([value]) => setStreamState({ ...streamState, flowRate: value })}
-                      min={0.1}
-                      max={1.0}
-                      step={0.05}
-                      className="w-full"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-slate-300">Terrain Slope: {(streamState.slope * 100).toFixed(1)}%</span>
-                    </div>
-                    <Slider
-                      value={[streamState.slope]}
-                      min={0}
-                      max={0.1}
-                      step={0.001}
-                      onValueChange={(val) => setStreamState((prev) => ({ ...prev, slope: val[0] }))}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-slate-300">Erosion Rate: {(streamState.erosionRate * 100).toFixed(0)}%</span>
-                    </div>
-                    <Slider
-                      value={[streamState.erosionRate]}
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      onValueChange={(val) => setStreamState((prev) => ({ ...prev, erosionRate: val[0] }))}
-                    />
+              <Card className="pointer-events-auto bg-slate-800/95 border-slate-700 backdrop-blur-sm p-4">
+                <div className="flex items-center gap-3">
+                  <Waves className="w-6 h-6 text-blue-400" />
+                  <div>
+                    <h1 className="text-xl font-bold text-white">Stream Trailer Simulator</h1>
+                    <p className="text-sm text-slate-300">Interactive Hydrology Education Tool</p>
                   </div>
                 </div>
               </Card>
             )}
 
-            {/* Tool Selection - In Full and Quick Mode */}
-            <Card className="pointer-events-auto bg-slate-800/95 border-slate-700 backdrop-blur-sm p-4 flex-1 min-w-[280px]">
-              <h2 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                <Shovel className="w-4 h-4 text-amber-400" />
-                Terrain Tools
-              </h2>
+            <div className="flex gap-4 flex-wrap max-w-full">
+              {/* Water Controls - Only in Full Mode */}
+              {controlMode === "full" && (
+                <Card className="pointer-events-auto bg-slate-800/95 border-slate-700 backdrop-blur-sm p-4 min-w-[280px] flex-1">
+                  <h2 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                    <Waves className="w-4 h-4 text-blue-400" />
+                    Water Flow
+                  </h2>
 
-              <div className="grid grid-cols-2 gap-2">
-                {tools.map((tool) => {
-                  const Icon = tool.icon
-                  const isSelected = streamState.selectedTool === tool.id
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant={streamState.waterFlow ? "default" : "outline"}
+                        onClick={() => setStreamState({ ...streamState, waterFlow: !streamState.waterFlow })}
+                        className="flex-1"
+                      >
+                        {streamState.waterFlow ? (
+                          <>
+                            <Pause className="w-4 h-4 mr-1" />
+                            Stop Flow
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-4 h-4 mr-1" />
+                            Start Flow
+                          </>
+                        )}
+                      </Button>
+                    </div>
 
-                  return (
-                    <Button
-                      key={tool.id}
-                      size="sm"
-                      variant={isSelected ? "default" : "outline"}
-                      onClick={() =>
-                        setStreamState({
-                          ...streamState,
-                          selectedTool: isSelected ? "none" : tool.id,
-                        })
-                      }
-                      className={`flex items-center gap-1 ${isSelected ? "ring-2 ring-blue-500" : ""}`}
-                    >
-                      <Icon className="w-3 h-3" />
-                      <span className="text-xs">{tool.label}</span>
-                    </Button>
-                  )
-                })}
-              </div>
-            </Card>
+                    <div className="space-y-2">
+                      <Label className="text-slate-300 text-xs">Flow Rate: {streamState.flowRate.toFixed(2)}</Label>
+                      <Slider
+                        value={[streamState.flowRate]}
+                        onValueChange={([value]) => setStreamState({ ...streamState, flowRate: value })}
+                        min={0.1}
+                        max={1.0}
+                        step={0.05}
+                        className="w-full"
+                      />
+                    </div>
 
-            {/* View Options - Only in Full Mode */}
-            {controlMode === "full" && (
-              <Card className="pointer-events-auto bg-slate-800/95 border-slate-700 backdrop-blur-sm p-4 w-full sm:w-auto">
-                <h2 className="text-sm font-semibold text-white mb-3">View Options</h2>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-300">Terrain Slope: {(streamState.slope * 100).toFixed(1)}%</span>
+                      </div>
+                      <Slider
+                        value={[streamState.slope]}
+                        min={0}
+                        max={0.1}
+                        step={0.001}
+                        onValueChange={(val) => setStreamState((prev) => ({ ...prev, slope: val[0] }))}
+                      />
+                    </div>
 
-                <div className="flex flex-row sm:flex-col gap-2">
-                  <Button
-                    size="sm"
-                    variant={streamState.showGrid ? "default" : "outline"}
-                    onClick={() => setStreamState({ ...streamState, showGrid: !streamState.showGrid })}
-                    className="flex-1"
-                  >
-                    <Grid3x3 className="w-4 h-4 mr-1" />
-                    {streamState.showGrid ? "Hide Grid" : "Show Grid"}
-                  </Button>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-300">Erosion Rate: {(streamState.erosionRate * 100).toFixed(0)}%</span>
+                      </div>
+                      <Slider
+                        value={[streamState.erosionRate]}
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        onValueChange={(val) => setStreamState((prev) => ({ ...prev, erosionRate: val[0] }))}
+                      />
+                    </div>
+                  </div>
+                </Card>
+              )}
 
-                  <Button size="sm" variant="outline" onClick={() => window.location.reload()} className="flex-1">
-                    <RotateCcw className="w-4 h-4 mr-1" />
-                    Reset Scene
-                  </Button>
+              {/* Tool Selection - In Full and Quick Mode */}
+              <Card className="pointer-events-auto bg-slate-800/95 border-slate-700 backdrop-blur-sm p-4 flex-1 min-w-[280px]">
+                <h2 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <Shovel className="w-4 h-4 text-amber-400" />
+                  Terrain Tools
+                </h2>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {tools.map((tool) => {
+                    const Icon = tool.icon
+                    const isSelected = streamState.selectedTool === tool.id
+
+                    return (
+                      <Button
+                        key={tool.id}
+                        size="sm"
+                        variant={isSelected ? "default" : "outline"}
+                        onClick={() =>
+                          setStreamState({
+                            ...streamState,
+                            selectedTool: isSelected ? "none" : tool.id,
+                          })
+                        }
+                        className={`flex items-center gap-1 ${isSelected ? "ring-2 ring-blue-500" : ""}`}
+                      >
+                        <Icon className="w-3 h-3" />
+                        <span className="text-xs">{tool.label}</span>
+                      </Button>
+                    )
+                  })}
                 </div>
+              </Card>
+
+              {/* View Options - Only in Full Mode */}
+              {controlMode === "full" && (
+                <Card className="pointer-events-auto bg-slate-800/95 border-slate-700 backdrop-blur-sm p-4 w-full sm:w-auto">
+                  <h2 className="text-sm font-semibold text-white mb-3">View Options</h2>
+
+                  <div className="flex flex-row sm:flex-col gap-2">
+                    <Button
+                      size="sm"
+                      variant={streamState.showGrid ? "default" : "outline"}
+                      onClick={() => setStreamState({ ...streamState, showGrid: !streamState.showGrid })}
+                      className="flex-1"
+                    >
+                      <Grid3x3 className="w-4 h-4 mr-1" />
+                      {streamState.showGrid ? "Hide Grid" : "Show Grid"}
+                    </Button>
+
+                    <Button size="sm" variant="outline" onClick={() => window.location.reload()} className="flex-1">
+                      <RotateCcw className="w-4 h-4 mr-1" />
+                      Reset Scene
+                    </Button>
+                  </div>
+                </Card>
+              )}
+            </div>
+
+            {/* Instructions - Only in Full Mode */}
+            {controlMode === "full" && (
+              <Card className="pointer-events-auto bg-slate-800/95 border-slate-700 backdrop-blur-sm p-3">
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  <strong className="text-white">Controls:</strong> Drag to rotate view, scroll to zoom, right-click to
+                  pan. Select a tool and click on the terrain to modify it. Start water flow to observe erosion and
+                  deposition patterns.
+                </p>
               </Card>
             )}
           </div>
-
-          {/* Instructions - Only in Full Mode */}
-          {controlMode === "full" && (
-            <Card className="pointer-events-auto bg-slate-800/95 border-slate-700 backdrop-blur-sm p-3">
-              <p className="text-xs text-slate-300 leading-relaxed">
-                <strong className="text-white">Controls:</strong> Drag to rotate view, scroll to zoom, right-click to
-                pan. Select a tool and click on the terrain to modify it. Start water flow to observe erosion and
-                deposition patterns.
-              </p>
-            </Card>
-          )}
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   )
 }
