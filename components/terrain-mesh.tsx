@@ -144,7 +144,7 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange, on
 
       // For grass, create multiple instances in a radius for larger paint effect
       if (streamState.selectedTool === "grass") {
-        const grassCount = 8 + Math.floor(Math.random() * 5) // 8-12 grass patches
+        const grassCount = 4 + Math.floor(Math.random() * 3) // Reduced for spray paint
         const grassRadius = 1.5 // Larger radius for grass painting
         const newGrass: Array<{
           id: string
@@ -169,7 +169,7 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange, on
               id: Math.random().toString(36).substring(2, 9),
               position: [gx, gy, gz] as [number, number, number],
               type: "grass" as const,
-              scale: (0.8 + Math.random() * 0.4),
+              scale: (0.8 + Math.random() * 0.4) * 0.5, // 50% shorter
             })
           }
         }
@@ -250,12 +250,12 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange, on
     <mesh
       ref={meshRef}
       geometry={geometry}
-      receiveShadow
-      castShadow
       onPointerDown={handlePointerDown}
       onPointerMove={(e) => {
         if ((e as any).buttons === 1) handlePointerDown(e as any)
       }}
+      receiveShadow
+      castShadow
     >
       <meshStandardMaterial vertexColors roughness={0.85} metalness={0.05} />
     </mesh>
