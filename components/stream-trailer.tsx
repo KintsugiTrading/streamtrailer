@@ -5,7 +5,7 @@ import { OrbitControls, Environment, Grid } from "@react-three/drei"
 import { Physics } from "@react-three/rapier"
 import { TrailerScene } from "./trailer-scene"
 import { StreamControls } from "./stream-controls"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 
 export type Tool = "dig" | "fill" | "tree" | "grass" | "bridge" | "remove" | "none"
 
@@ -37,6 +37,42 @@ export function StreamTrailer() {
     plants: [], // Initialize empty plants array
   })
 
+  const [isInteracting, setIsInteracting] = useState(false)
+  const [touchCount, setTouchCount] = useState(0)
+
+  // Track number of touches to detect 2-finger gestures
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      setTouchCount(e.touches.length)
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      setTouchCount(e.touches.length)
+      if (e.touches.length === 0) {
+        setIsInteracting(false)
+      }
+    }
+
+    window.addEventListener("touchstart", handleTouchStart)
+    window.addEventListener("touchend", handleTouchEnd)
+    window.addEventListener("touchcancel", handleTouchEnd)
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart)
+      window.removeEventListener("touchend", handleTouchEnd)
+      window.removeEventListener("touchcancel", handleTouchEnd)
+    }
+  }, [])
+
+  // Determine if camera controls should be enabled
+  // 1. Always enabled if no tool selected
+  // 2. Always enabled if 2+ fingers (override)
+  // 3. Disabled if interacting with terrain (and tool selected)
+  const controlsEnabled =
+    streamState.selectedTool === "none" ||
+    touchCount >= 2 ||
+    !isInteracting
+
   return (
     <div className="relative w-full h-full">
       <Canvas camera={{ position: [0, 8, 20], fov: 50 }} shadows gl={{ antialias: true, alpha: false }}>
@@ -65,11 +101,16 @@ export function StreamTrailer() {
           minDistance={5}
           maxDistance={30}
           enablePan={true}
+          enabled={controlsEnabled}
         />
 
         {/* Physics-enabled scene */}
         <Physics gravity={[0, -9.81, 0]}>
-          <TrailerScene streamState={streamState} setStreamState={setStreamState} />
+          <TrailerScene
+            streamState={streamState}
+            setStreamState={setStreamState}
+            setIsInteracting={setIsInteracting}
+          />
         </Physics>
 
         {/* Optional grid for reference */}

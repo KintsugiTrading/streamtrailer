@@ -10,6 +10,7 @@ import { ErosionSystem, sampleBilinear } from "../lib/erosion-physics"
 interface TerrainMeshProps {
   streamState: StreamState
   setStreamState?: (state: StreamState | ((prev: StreamState) => StreamState)) => void
+  setIsInteracting?: (interacting: boolean) => void
   onHeightMapChange?: (heights: Float32Array) => void
   onErosionSystemChange?: (erosionSystem: ErosionSystem) => void
 }
@@ -19,7 +20,7 @@ export const HEIGHT = 128
 export const SIZE_X = 9
 export const SIZE_Z = 15
 
-export function TerrainMesh({ streamState, setStreamState, onHeightMapChange, onErosionSystemChange }: TerrainMeshProps) {
+export function TerrainMesh({ streamState, setStreamState, setIsInteracting, onHeightMapChange, onErosionSystemChange }: TerrainMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null)
 
   const { geometry, heights, baseColors } = useMemo(() => {
@@ -121,6 +122,11 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange, on
   const handlePointerDown = (e: THREE.Event & { point: THREE.Vector3; stopPropagation: () => void }) => {
     if (streamState.selectedTool === "none") return
     e.stopPropagation()
+
+    // Notify parent that interaction started
+    if (setIsInteracting) {
+      setIsInteracting(true)
+    }
 
     const point = e.point
 
@@ -253,6 +259,12 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange, on
       receiveShadow
       castShadow
       onPointerDown={handlePointerDown}
+      onPointerUp={() => {
+        if (setIsInteracting) setIsInteracting(false)
+      }}
+      onPointerLeave={() => {
+        if (setIsInteracting) setIsInteracting(false)
+      }}
       onPointerMove={(e) => {
         if ((e as any).buttons === 1) handlePointerDown(e as any)
       }}

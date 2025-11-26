@@ -9,11 +9,12 @@ import type { ErosionSystem } from "../lib/erosion-physics"
 interface TrailerSceneProps {
   streamState: StreamState
   setStreamState?: (state: StreamState | ((prev: StreamState) => StreamState)) => void
+  setIsInteracting?: (interacting: boolean) => void
 }
 
 import { useState, useCallback } from "react"
 
-export function TrailerScene({ streamState, setStreamState }: TrailerSceneProps) {
+export function TrailerScene({ streamState, setStreamState, setIsInteracting }: TrailerSceneProps) {
   const [heightMap, setHeightMap] = useState<Float32Array | null>(null)
   const [erosionSystem, setErosionSystem] = useState<ErosionSystem | null>(null)
 
@@ -33,6 +34,7 @@ export function TrailerScene({ streamState, setStreamState }: TrailerSceneProps)
       <TerrainMesh
         streamState={streamState}
         setStreamState={setStreamState} // Pass setter to terrain
+        setIsInteracting={setIsInteracting}
         onHeightMapChange={handleHeightMapChange}
         onErosionSystemChange={handleErosionSystemChange}
       />
