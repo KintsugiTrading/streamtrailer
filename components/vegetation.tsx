@@ -208,7 +208,7 @@ export function Vegetation({ plants }: VegetationProps) {
         const offsetX = (Math.random() - 0.5) * 0.3
         const offsetZ = (Math.random() - 0.5) * 0.3
         const rotation = Math.random() * Math.PI
-        const scale = g.scale * (0.2 + Math.random() * 0.15)
+        const scale = g.scale * (0.2 + Math.random() * 0.15) * 0.5 // 50% shorter
 
         dummy.position.set(g.position[0] + offsetX, g.position[1], g.position[2] + offsetZ)
         dummy.rotation.set(0, rotation, 0)
@@ -235,7 +235,7 @@ export function Vegetation({ plants }: VegetationProps) {
       if (i >= MAX_INSTANCES) return
       dummy.position.set(b.position[0], b.position[1] + 0.1, b.position[2])
       dummy.rotation.set(0, (Math.PI / 2) + (Math.random() * 0.1), 0) // Rotated 90 degrees + slight random
-      dummy.scale.set(b.scale, b.scale, b.scale)
+      dummy.scale.set(b.scale * 0.5, b.scale * 0.5, b.scale * 0.5) // 50% smaller
       dummy.updateMatrix()
       bridgeMesh.setMatrixAt(i, dummy.matrix)
     })

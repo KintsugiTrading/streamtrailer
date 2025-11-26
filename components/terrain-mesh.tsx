@@ -162,18 +162,21 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange, on
         }))
       } else {
         // Single instance for trees and bridges
-        setStreamState((prev) => ({
-          ...prev,
-          plants: [
-            ...prev.plants,
-            {
-              id: Math.random().toString(36).substring(2, 9),
-              position: [point.x, point.y, point.z] as [number, number, number],
-              type: streamState.selectedTool as "tree" | "grass" | "bridge",
-              scale: 0.8 + Math.random() * 0.4,
-            },
-          ],
-        }))
+        // Check bounds
+        if (Math.abs(point.x) < SIZE_X / 2 - 0.2 && Math.abs(point.z) < SIZE_Z / 2 - 0.2) {
+          setStreamState((prev) => ({
+            ...prev,
+            plants: [
+              ...prev.plants,
+              {
+                id: Math.random().toString(36).substring(2, 9),
+                position: [point.x, point.y, point.z] as [number, number, number],
+                type: streamState.selectedTool as "tree" | "grass" | "bridge",
+                scale: 0.8 + Math.random() * 0.4,
+              },
+            ],
+          }))
+        }
       }
       return
     }
