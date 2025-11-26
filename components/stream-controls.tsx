@@ -145,7 +145,6 @@ export function StreamControls({ streamState, setStreamState }: StreamControlsPr
                 {tools.map((tool) => {
                   const Icon = tool.icon
                   const isSelected = streamState.selectedTool === tool.id
-                  const isGrass = tool.id === "grass"
 
                   return (
                     <Button
@@ -158,10 +157,10 @@ export function StreamControls({ streamState, setStreamState }: StreamControlsPr
                           selectedTool: isSelected ? "none" : tool.id,
                         })
                       }
-                      className={`flex items-center gap-1 ${isSelected ? "ring-2 ring-blue-500" : ""} ${isGrass ? "py-3" : ""}`}
+                      className={`flex items-center gap-1 ${isSelected ? "ring-2 ring-blue-500" : ""}`}
                     >
-                      <Icon className={isGrass ? "w-5 h-5" : "w-3 h-3"} />
-                      <span className={isGrass ? "text-sm font-semibold" : "text-xs"}>{tool.label}</span>
+                      <Icon className="w-3 h-3" />
+                      <span className="text-xs">{tool.label}</span>
                     </Button>
                   )
                 })}

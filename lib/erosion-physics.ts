@@ -509,3 +509,27 @@ export class ErosionSystem {
     }
   }
 }
+
+export function sampleBilinear(map: Float32Array, x: number, y: number, width: number, height: number): number {
+  if (x < 0 || x >= width - 1 || y < 0 || y >= height - 1) {
+    return 0 // Boundary condition
+  }
+
+  const x0 = Math.floor(x)
+  const y0 = Math.floor(y)
+  const x1 = x0 + 1
+  const y1 = y0 + 1
+
+  const ax = x - x0
+  const ay = y - y0
+
+  const v00 = map[y0 * width + x0]
+  const v10 = map[y0 * width + x1]
+  const v01 = map[y1 * width + x0]
+  const v11 = map[y1 * width + x1]
+
+  const v0 = v00 * (1 - ax) + v10 * ax
+  const v1 = v01 * (1 - ax) + v11 * ax
+
+  return v0 * (1 - ay) + v1 * ay
+}

@@ -5,7 +5,7 @@ import { useFrame } from "@react-three/fiber"
 import * as THREE from "three"
 import type { StreamState } from "./stream-trailer"
 import { createNoise2D } from "simplex-noise"
-import { ErosionSystem } from "../lib/erosion-physics"
+import { ErosionSystem, sampleBilinear } from "../lib/erosion-physics"
 
 interface TerrainMeshProps {
   streamState: StreamState
@@ -125,6 +125,23 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange, on
     const point = e.point
 
     if ((streamState.selectedTool === "tree" || streamState.selectedTool === "grass" || streamState.selectedTool === "bridge") && setStreamState) {
+
+      const getWorldHeight = (wx: number, wz: number) => {
+        // Map world coordinates to grid coordinates
+        // World X: [-SIZE_X/2, SIZE_X/2] -> Grid X: [0, WIDTH-1]
+        // World Z: [-SIZE_Z/2, SIZE_Z/2] -> Grid Y: [0, HEIGHT-1]
+
+        // Note: PlaneGeometry vertices are created row by row.
+        // Usually row 0 corresponds to -Z (top) or +Z (bottom) depending on rotation.
+        // With rotateX(-PI/2), the plane faces up.
+        // Let's assume standard mapping where (0,0) index is at (-SIZE_X/2, -SIZE_Z/2).
+
+        const gridX = ((wx + SIZE_X / 2) / SIZE_X) * (WIDTH - 1)
+        const gridY = ((wz + SIZE_Z / 2) / SIZE_Z) * (HEIGHT - 1)
+
+        return sampleBilinear(heights, gridX, gridY, WIDTH, HEIGHT)
+      }
+
       // For grass, create multiple instances in a radius for larger paint effect
       if (streamState.selectedTool === "grass") {
         const grassCount = 8 + Math.floor(Math.random() * 5) // 8-12 grass patches
@@ -147,11 +164,12 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange, on
 
           // Check bounds
           if (Math.abs(gx) < SIZE_X / 2 - 0.2 && Math.abs(gz) < SIZE_Z / 2 - 0.2) {
+            const gy = getWorldHeight(gx, gz)
             newGrass.push({
               id: Math.random().toString(36).substring(2, 9),
-              position: [gx, point.y, gz] as [number, number, number],
+              position: [gx, gy, gz] as [number, number, number],
               type: "grass" as const,
-              scale: 0.8 + Math.random() * 0.4,
+              scale: (0.8 + Math.random() * 0.4),
             })
           }
         }
@@ -164,13 +182,14 @@ export function TerrainMesh({ streamState, setStreamState, onHeightMapChange, on
         // Single instance for trees and bridges
         // Check bounds
         if (Math.abs(point.x) < SIZE_X / 2 - 0.2 && Math.abs(point.z) < SIZE_Z / 2 - 0.2) {
+          const py = getWorldHeight(point.x, point.z)
           setStreamState((prev) => ({
             ...prev,
             plants: [
               ...prev.plants,
               {
                 id: Math.random().toString(36).substring(2, 9),
-                position: [point.x, point.y, point.z] as [number, number, number],
+                position: [point.x, py, point.z] as [number, number, number],
                 type: streamState.selectedTool as "tree" | "grass" | "bridge",
                 scale: 0.8 + Math.random() * 0.4,
               },
