@@ -8,6 +8,7 @@ A photorealistic and interactive 3D stream trailer simulation built with Next.js
 - Water flow simulation
 - Vegetation placement (trees, grass, bridges)
 - Real-time erosion effects
+- Mobile-optimized touch controls with tool/camera separation
 
 ## Getting Started
 
@@ -20,4 +21,4 @@ Open [http://localhost:3000](http://localhost:3000) to view the simulation.
 
 ## Updated
 
-Last updated: November 24, 2025
+Last updated: November 26, 2025
