@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useMemo } from "react"
 import * as THREE from "three"
+import { useFrame } from "@react-three/fiber"
 import type { PlantInstance } from "./stream-trailer"
 
 interface VegetationProps {
   plants: PlantInstance[]
 }
 
-const MAX_INSTANCES = 500
+const MAX_INSTANCES = 10000 // Increased for grass density
 
 export function Vegetation({ plants }: VegetationProps) {
   const trees = useMemo(() => plants.filter((p) => p.type === "tree"), [plants])
@@ -22,7 +23,66 @@ export function Vegetation({ plants }: VegetationProps) {
   const grassRef = useRef<THREE.InstancedMesh>(null)
   const bridgeRef = useRef<THREE.InstancedMesh>(null)
 
+  // Material ref for updating uniforms
+  const grassMaterialRef = useRef<THREE.MeshStandardMaterial>(null)
+
   const dummy = useMemo(() => new THREE.Object3D(), [])
+
+  // Create grass blade geometry
+  const grassGeometry = useMemo(() => {
+    const geometry = new THREE.PlaneGeometry(0.1, 0.5, 1, 4)
+    geometry.translate(0, 0.25, 0) // Move pivot to bottom
+    return geometry
+  }, [])
+
+  useFrame((state) => {
+    if (grassMaterialRef.current?.userData.shader) {
+      grassMaterialRef.current.userData.shader.uniforms.uTime.value = state.clock.elapsedTime
+    }
+  })
+
+  const onBeforeCompile = useMemo(() => (shader: any) => {
+    shader.uniforms.uTime = { value: 0 }
+    if (grassMaterialRef.current) {
+      grassMaterialRef.current.userData.shader = shader
+    }
+
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <common>',
+      `
+      #include <common>
+      uniform float uTime;
+      `
+    )
+
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <begin_vertex>',
+      `
+      #include <begin_vertex>
+      
+      // Tapering
+      float taper = 1.0 - (transformed.y / 0.5) * 0.7;
+      transformed.x *= taper;
+
+      // Wind animation
+      float windStrength = 0.15;
+      // Use world position for noise/wave if possible, or instance position
+      // instanceMatrix[3] contains translation
+      vec3 instancePos = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]);
+      
+      float wave = sin(uTime * 2.0 + instancePos.x * 0.5 + instancePos.z * 0.5);
+      
+      // Apply wind displacement based on height (squared for stiffness at bottom)
+      float displacement = pow(transformed.y, 2.0) * wave * windStrength;
+      
+      transformed.x += displacement;
+      transformed.z += displacement * 0.5;
+      `
+    )
+
+    // Gradient color in fragment shader?
+    // For now, let's stick to standard lighting.
+  }, [])
 
   useEffect(() => {
     const trunk = trunkRef.current
@@ -88,17 +148,33 @@ export function Vegetation({ plants }: VegetationProps) {
 
     if (!grassMesh?.instanceMatrix) return
 
-    grass.forEach((g, i) => {
-      if (i >= MAX_INSTANCES) return
+    let instanceIndex = 0
 
-      dummy.position.set(g.position[0], g.position[1] + 0.05, g.position[2])
-      dummy.scale.set(g.scale * 0.3, g.scale * 0.1, g.scale * 0.3)
-      dummy.updateMatrix()
-      grassMesh.setMatrixAt(i, dummy.matrix)
+    grass.forEach((g) => {
+      // Create a clump of grass for each "grass" plant
+      const bladesPerClump = 5
+
+      for (let b = 0; b < bladesPerClump; b++) {
+        if (instanceIndex >= MAX_INSTANCES) break
+
+        const offsetX = (Math.random() - 0.5) * 0.3
+        const offsetZ = (Math.random() - 0.5) * 0.3
+        const rotation = Math.random() * Math.PI
+        const scale = g.scale * (0.8 + Math.random() * 0.4)
+
+        // Position directly on the ground (pivot is at bottom)
+        dummy.position.set(g.position[0] + offsetX, g.position[1], g.position[2] + offsetZ)
+        dummy.rotation.set(0, rotation, 0)
+        dummy.scale.set(scale, scale, scale)
+        dummy.updateMatrix()
+        grassMesh.setMatrixAt(instanceIndex, dummy.matrix)
+
+        instanceIndex++
+      }
     })
 
     // Hide unused
-    for (let i = grass.length; i < MAX_INSTANCES; i++) {
+    for (let i = instanceIndex; i < MAX_INSTANCES; i++) {
       dummy.scale.set(0, 0, 0)
       dummy.updateMatrix()
       grassMesh.setMatrixAt(i, dummy.matrix)
@@ -153,8 +229,14 @@ export function Vegetation({ plants }: VegetationProps) {
 
       {/* Grass */}
       <instancedMesh ref={grassRef} args={[undefined, undefined, MAX_INSTANCES]} frustumCulled={false}>
-        <cylinderGeometry args={[0.3, 0.3, 0.1, 8]} />
-        <meshStandardMaterial color="#6b8e23" roughness={0.95} />
+        <primitive object={grassGeometry} />
+        <meshStandardMaterial
+          ref={grassMaterialRef}
+          color="#6b8e23"
+          roughness={0.9}
+          side={THREE.DoubleSide}
+          onBeforeCompile={onBeforeCompile}
+        />
       </instancedMesh>
 
       {/* Bridges */}
