@@ -110,6 +110,7 @@ export function StreamTrailer() {
             streamState={streamState}
             setStreamState={setStreamState}
             setIsInteracting={setIsInteracting}
+            touchCount={touchCount}
           />
         </Physics>
 

@@ -10,11 +10,12 @@ interface TrailerSceneProps {
   streamState: StreamState
   setStreamState?: (state: StreamState | ((prev: StreamState) => StreamState)) => void
   setIsInteracting?: (interacting: boolean) => void
+  touchCount?: number
 }
 
 import { useState, useCallback } from "react"
 
-export function TrailerScene({ streamState, setStreamState, setIsInteracting }: TrailerSceneProps) {
+export function TrailerScene({ streamState, setStreamState, setIsInteracting, touchCount }: TrailerSceneProps) {
   const [heightMap, setHeightMap] = useState<Float32Array | null>(null)
   const [erosionSystem, setErosionSystem] = useState<ErosionSystem | null>(null)
 
@@ -35,6 +36,7 @@ export function TrailerScene({ streamState, setStreamState, setIsInteracting }: 
         streamState={streamState}
         setStreamState={setStreamState} // Pass setter to terrain
         setIsInteracting={setIsInteracting}
+        touchCount={touchCount}
         onHeightMapChange={handleHeightMapChange}
         onErosionSystemChange={handleErosionSystemChange}
       />
