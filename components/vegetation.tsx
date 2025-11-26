@@ -10,7 +10,7 @@ interface VegetationProps {
   plants: PlantInstance[]
 }
 
-const MAX_INSTANCES = 10000
+const MAX_INSTANCES = 100000
 
 export function Vegetation({ plants }: VegetationProps) {
   const trees = useMemo(() => plants.filter((p) => p.type === "tree"), [plants])

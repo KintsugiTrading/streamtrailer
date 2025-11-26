@@ -23,7 +23,7 @@ export function StreamControls({ streamState, setStreamState }: StreamControlsPr
     { id: "tree", icon: Tree, label: "Trees" },
     { id: "grass", icon: Sprout, label: "Grass" },
     { id: "bridge", icon: Construction, label: "Bridge" },
-    { id: "remove", icon: Trash2, label: "Remove Plants" },
+    { id: "remove", icon: Trash2, label: "Remove" },
   ]
 
   return (
